@@ -40,10 +40,10 @@ vector<function> loadedFunctions; //this is read in from the funct.fuk file UGLI
 //We need to de-templatize image class from image.h
 struct dspWin {
   char *path;
-  image<rgb>* A;
-  image<rgb>* B;
-  unsigned char *C;
-  int winNum;
+  image<rgb>* A;  //in image
+  image<rgb>* B;  //out image
+  unsigned char *C;  //in image in gl form
+  unsigned char *D;  //out image in gl form
 };
 
 //prototypes
@@ -82,6 +82,7 @@ dspWin* initDspWin(char *filePath) {
   //prepares C in GL format
   
   get_C_ready(tmp);
+  get_D_ready(tmp);
   return tmp;
 }
 
@@ -103,6 +104,28 @@ void get_C_ready (dspWin *target) {
       target->C[count++] = imRef(target->B, j, i).r;
       target->C[count++] = imRef(target->B, j, i).g;
       target->C[count++] = imRef(target->B, j, i).b;
+    }
+  }
+}
+
+//function that moves data in B to GL format in C
+void get_D_ready (dspWin *target) {
+  int width = target->A->width();
+  int height = target->A->height();
+  int count = 0;  //counter for loop
+
+  //in case C is already initialized, delete it's value
+  //delete[] target->C;
+
+  //for RGB, it is three bigger
+  target->D = new unsigned char[width*height*3];
+
+  //since we want to start at bottom, i starts at height-1, goes to 0
+  for (int i=height-1; i>=0; i--) {
+    for (int j=0; j<width; j++) {
+      target->D[count++] = imRef(target->B, j, i).r;
+      target->D[count++] = imRef(target->B, j, i).g;
+      target->D[count++] = imRef(target->B, j, i).b;
     }
   }
 }
@@ -135,6 +158,7 @@ void deleteDspWin(dspWin *target) {
   delete target->A;
   delete target->B;
   delete [] target->C;
+  delete [] target->D;
 }
 
 /*Calls function on B*/
