@@ -38,7 +38,7 @@ dspWin* loadedImg; //this is the loaded image woohoo!
 int mainWinWidth, mainWinHeight; //these aren't used right now, but they should eventually be used to increase the size if the params are very large
 int winA, winB; //these will be the image windows, ROCK AND ROLL
 
-/*********************** pui globals (globally defined gui elements are not my friend *****/
+//pui globals
 puFileSelector *addFuncPath;
 puInput *addFuncName, *addFuncParamsNum;
 vector<puObject*> addFuncParams; //the entires will be name, then type, ok cool 
@@ -50,7 +50,7 @@ void addFuncPathCB(puObject*);
 void addFuncNameCB(puObject*);
 void addFuncFinalCB(puObject*);
 puOneShot *ok;
-/************end pui shit ******* fuck you pui*/
+//end pui globas (you're dumb pui)
 
 #ifndef PARAM_S
 #define PARAM_S
@@ -120,6 +120,14 @@ void keyb(unsigned char key, int x, int y){
 void openFileCB(puObject*){
   char* fileName;
   openDialogBox->getValue(&fileName);
+  
+  //check to see if we've already go an image, if so delete it
+  if(loadedImg != NULL){
+    glutDestroyWindow(winA);
+    glutDestroyWindow(winB);
+    deleteDspWin(loadedImg);
+  }
+
   loadedImg = initDspWin(fileName); //from dspWin.h
 
   //create the windows for it, booh ya ka-sha!
@@ -335,7 +343,7 @@ void addFuncFinalCB(puObject*){
 //FILE MENU -- exit function callback
 void exitCB(puObject*){
   puDeleteObject(mainMenu);
-  //TO DO: is this deallocating everything? 
+  //TO DO: is this deallocating everything? (check into openGL)
   
   if(loadedImg != NULL){
     glutDestroyWindow(winA);
