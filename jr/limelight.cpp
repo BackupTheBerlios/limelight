@@ -29,30 +29,14 @@ else
 
 /******************the great to do list: ****************
 
- *make limelight take in an environmental arg to open an img -- DONE ts (3/11)
- *make menus work -- DONE ts (3/11)
- *make drop down function changer work -- DONE ts (3/11)
- *make add function stuff work
- *make the open image "cancel" button work -- DONE ts (3/11)
- *'save'/ 'save as' needs to reload B -- DONE ts (3/11)
- *kill the glut menus -- DONE ts (3/11)
- *hmmmm... i think that we can totally get rid of c and d... (glPixelZoom(1.0,-1.0)), haha. except giving it a neg num doesnt work (WTF??)
- *check out disabling gl states we dont use -- DONE ts (3/12)
- *set up program to take in a given configfile and use that for params
 
+ *hmmmm... i think that we can totally get rid of c and d... (glPixelZoom(1.0,-1.0)), haha. except giving it a neg num doesnt work (WTF??)
+ *check out disabling gl states we dont use -- for macs and linux
 
  *wish list:
- *'close' menu item -- DONE ts (3/11)
  *add a printout from the stdout (this one is a little hard, we need to make it pipe the exec) -- dup2 to a text file so people can look at it later
- *add a function remove feature...
- *rename func.fuk to configure something or other
- *rename enviro to limelight -- DONE ts (3/12)
- *make the code readable
  *enable tab for inputs and return for buttons (possible?)
- *after adding a new function it should tell you to restart the program / if someone's feeling ambitious reload the functions
- *add keyboard shortcuts (cuz that's cool) -- kinda done, except cant get ctrl or shift to work... (whats up with that?)
- *itd be cool to add errors and popups / disable menu items for when you cannot do things
- *load the first function on the list into the window -- DONE ts (3/12)
+ *make pan amount not so slow when zoomAmount < 5
 
 */
 
@@ -198,12 +182,12 @@ void motionfnWinA(int x, int y ){
     /*AND TEST ON aLena.ppm CUZ SHE FUCKS UP ON MACS */
    
     //height -- move up move image cutoff up / reverse for down
-    if((double)(posHeight-y) > 0) offSetY += 1*zoomAmount;
-    if((double)(posHeight-y) < 0) offSetY -= 1*zoomAmount;
+    if((double)(posHeight-y) > 0) offSetY -= 1*zoomAmount;
+    if((double)(posHeight-y) < 0) offSetY += 1*zoomAmount;
 
     //width -- move left move image cutoff left / reverse for right
-    if((double)(posWidth-x) > 0) offSetX -= 1*zoomAmount;
-    if((double)(posWidth-x) < 0) offSetX += 1*zoomAmount;
+    if((double)(posWidth-x) > 0) offSetX += 1*zoomAmount;
+    if((double)(posWidth-x) < 0) offSetX -= 1*zoomAmount;
 
     //reset current width and height for next round
     posHeight = y;
@@ -248,6 +232,16 @@ void mousefnWinA(int button, int updown, int x, int y){
     return; //we don't want people panning and zooming at the same time -- that'd just be insane!
   }
 
+   //if someone let's off of the shift, but not on the mouse button we need to stop the zooming
+  //NEED A FIX: this takes care of the problem after the fact, so that if someone starts zooming
+  //again, after they stopped zooming with a shift letup then a mouse button letup, but it would be nice
+  // to make it stop zooming when they let up on the shift key
+  if(updown == GLUT_DOWN && zoom==1 && glutGetModifiers() != GLUT_ACTIVE_SHIFT){
+    glutSetCursor(GLUT_CURSOR_INHERIT);
+    zoom = 0;
+    return;
+  }
+  
   //for the pan
   if(updown == GLUT_DOWN){
     if(mouseOn == 1)
