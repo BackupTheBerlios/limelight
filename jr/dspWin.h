@@ -38,55 +38,41 @@
 vector<function> loadedFunctions; //this is read in from the funct.fuk file UGLINESS!!!
 
 //This is the struct for holding the parts of the image process
-//We need to de-templatize image class from image.h
-template <typename T>
+
 struct dspWin {
   char *path;
-  image<T>* A;  //in image
-  image<T>* B;  //out image
+  image* A;  //in image
+  image* B;  //out image
   unsigned char *C;  //in image in gl form
   unsigned char *D;  //out image in gl form
-  bool isRGB;  //true if RGB, false if greyscale
   int winNum;  
 };
 
 //prototypes
-template <typename T>
-dspWin<T> *initDspWin(char *filePath);
-template <typename T>
-void get_C_ready (dspWin<T> *target);
-template <typename T>
-void get_D_ready (dspWin<T> *target);
-template <typename T>
-void saveDspWin(dspWin<T> *src, char *filePath);
-template <typename T>
-void saveDspWin(dspWin<T> *src);
-template <typename T>
-void saveTMP(dspWin<T> *src);
-template <typename T>
-void deleteDspWin(dspWin<T> *target);
-template <typename T>
-void callFunct(dspWin<T> *target, int i, char **par);
-template <typename T>
-void load2B(dspWin<T> *target, char *filePath);
-template <typename T>
-void revert2A(dspWin<T> *target);
-
+dspWin* initDspWin(char *filePath);
+void get_C_ready (dspWin *target);
+void get_D_ready (dspWin *target);
+void saveDspWin(dspWin *src, char *filePath);
+void saveDspWin(dspWin *src);
+void saveTMP(dspWin *src);
+void deleteDspWin(dspWin *target);
+void callFunct(dspWin *target, int i, char **par);
+void load2B(dspWin *target, char *filePath);
+void revert2A(dspWin *target);
+void getCHelpPPM(dspWin *target);
+void getCHelpPGM(dspWin *target);
+void getDHelpPPM(dspWin *target);
+void getDHelpPGM(dspWin *target);
 
 
 
 //initialize dspWin from disk
-template <typename T>
-dspWin<T> *initDspWin(char *filePath) {
-  dspWin<T> *tmp = new dspWin<T>;
-  tmp->path = new char[50];
+dspWin* initDspWin(char *filePath) {
+  dspWin *tmp = new dspWin;
+  tmp->path = new char[70];
 
   for (int i = 0; filePath[i]!='\0'; i++)
     tmp->path[i] = filePath[i];
-
-  /*this won't work unless we change Pedro's  pnmfile.h
-    so that it will read any image without caring if they are pgm, ppm, etc.
-    ASK HIM ABOUT IT */
 
   /*check to see if image is ppm or pgm*/
   //5 is raw pgm, 6 is raw ppm, ...
@@ -99,16 +85,17 @@ dspWin<T> *initDspWin(char *filePath) {
   //check second character (P_)
   input.seekg(1, ios::beg);
   char c = input.peek();
+  input.close();
+
   switch (c) {
   case '6' :
-    tmp->isRGB=true;
     tmp->A = loadPPM(filePath);
     break;
   case '5' :
-    tmp->isRGB=false;
     tmp->A = loadPGM(filePath);
     break;
   }
+  
   //tmp B is initially a copy of A
   tmp->B = tmp->A->copy();
 
@@ -122,47 +109,30 @@ dspWin<T> *initDspWin(char *filePath) {
 
 
 //function that moves data in B to GL format in C
-template <typename T>
-void get_C_ready (dspWin<T> *target) {
+void get_C_ready (dspWin *target) {
   int width = target->B->width();
   int height = target->B->height();
-  int count = 0;  //counter for loop
+  int pixels = target->B->pixelCount;
 
   //in case C is already initialized, delete it's value
   //delete[] target->C;
 
   //for RGB, it is three bigger
   target->C = new unsigned char[width*height*3];
-
-  //since we want to start at bottom, i starts at height-1, goes to 0
-  for (int i=height-1; i>=0; i--) {
-    /*if rgb, get all three colors*/
-    if (target->isRGB) {
-      for (int j=0; j<width; j++) {
-	target->C[count++] = imRef(target->B, j, i).r;
-	target->C[count++] = imRef(target->B, j, i).g;
-	target->C[count++] = imRef(target->B, j, i).b;
-      }
-    }
-    /*otherwise, get color and throw it into r, g, and b*/
-    else {
-      char helper;
-      for (int j=0; j<width; j++) {
-	helper = imRef(target->B, j, i);
-	target->C[count++] = helper;
-	target->C[count++] = helper;
-	target->C[count++] = helper;
-      }
-    }
-  }
+    
+  if (pixels==3)
+    getCHelpPPM(target);
+  else
+    getCHelpPGM(target);
+  return;
 }
 
-//function that moves data in B to GL format in C
-template <typename T>
-void get_D_ready (dspWin<T> *target) {
-  int width = target->A->width();
-  int height = target->A->height();
-  int count = 0;  //counter for loop
+
+
+//function that moves data in B to GL format in D
+void get_D_ready (dspWin *target) {
+  int width = target->B->width();
+  int height = target->B->height();
 
   //in case C is already initialized, delete it's value
   //delete[] target->C;
@@ -170,34 +140,84 @@ void get_D_ready (dspWin<T> *target) {
   //for RGB, it is three bigger
   target->D = new unsigned char[width*height*3];
 
-  //since we want to start at bottom, i starts at height-1, goes to 0
-  for (int i=height-1; i>=0; i--) {
-    if (target->isRGB) {
-      for (int j=0; j<width; j++) {
-	target->C[count++] = imRef(target->B, j, i).r;
-	target->C[count++] = imRef(target->B, j, i).g;
-	target->C[count++] = imRef(target->B, j, i).b;
-      }
-    }
-    /*otherwise, get color and throw it into r, g, and b*/
-    else {
-      char helper;
-      for (int j=0; j<width; j++) {
-	helper = imRef(target->B, j, i);
-	target->D[count++] = helper;
-	target->D[count++] = helper;
-	target->D[count++] = helper;
-      }
-    }  
-  }
+  if (target->A->isRGB)
+    getDHelpPPM(target);
+  else
+    getDHelpPGM(target);
+  return;
 }
+
+
+void getCHelpPPM(dspWin *target) {
+  int width = target->B->width();
+  int height = target->B->height();
+  int count = 0;  //counter for loop
+  int loc = 0; //counter
+  for (int i=height-1; i>=0; i--) {
+    for (int j=0; j<width; j++) {
+      loc = (i*width)+(j*3);
+      target->C[count++] = target->B->data[loc++];
+      target->C[count++] = target->B->data[loc++];
+      target->C[count++] = target->B->data[loc];
+    }
+  }
+  return;
+}
+
+void getCHelpPGM(dspWin *target) {
+  int width = target->B->width();
+  int height = target->B->height();
+  int count = 0;  //counter for loop
+  char helper;
+  for (int i=height-1; i>=0; i--) {
+    for (int j=0; j<width; j++) {
+      helper = target->B->data[(i*width)+j];
+      target->C[count++] = helper;
+      target->C[count++] = helper;
+      target->C[count++] = helper;
+    }
+  }
+  return;
+}
+
+void getDHelpPPM(dspWin *target) {
+  int width = target->A->width();
+  int height = target->A->height();
+  int count = 0;  //counter for loop
+  int loc = 0; //counter
+  for (int i=height-1; i>=0; i--) {
+    for (int j=0; j<width; j++) {
+      loc = (i*width)+(j*3);
+      target->D[count++] = target->A->data[loc++];
+      target->D[count++] = target->A->data[loc++];
+      target->D[count++] = target->A->data[loc];
+    }
+  }
+  return;
+}
+
+void getDHelpPGM(dspWin *target) {
+  int width = target->A->width();
+  int height = target->A->height();
+  int count = 0;  //counter for loop
+  unsigned char helper;
+  for (int i=height-1; i>=0; i--) {
+    for (int j=0; j<width; j++) {
+      helper = target->A->data[(i*width)+j];
+      target->D[count++] = helper;
+      target->D[count++] = helper;
+      target->D[count++] = helper;
+    }
+  }
+  return;
+}
+
 
 
 //function that saves B, and loads B into A
 //WHAT IS PEDRO'S VLIB THING IN save_image (in pnmfile.h)?
-template <typename T>
-void saveDspWin(dspWin<T> *src, char *filePath) {
-  if (src->isRGB)
+void saveDspWin(dspWin *src, char *filePath) {
+  if (src->A->isRGB)
     savePPM(src->B, filePath);
   else
     savePGM(src->B, filePath);
@@ -206,9 +226,8 @@ void saveDspWin(dspWin<T> *src, char *filePath) {
 }
 
 //function that saves B to same location as A, then loads image
-template <typename T>
-void saveDspWin(dspWin<T> *src) {
-  if (src->isRGB)
+void saveDspWin(dspWin *src) {
+  if (src->A->isRGB)
     savePPM(src->B, src->path);
   else
     savePGM(src->B, src->path);
@@ -217,18 +236,16 @@ void saveDspWin(dspWin<T> *src) {
 }
 
 //function that saves B as tmp
-template <typename T>
-void saveTMP(dspWin<T> *src) {
-  if (src->isRGB)
-    savePPM(src->B, "/tmp/tmp.fuk");
+void saveTMP(dspWin *src) {
+  if (src->A->isRGB)
+    savePPM(src->A, "/tmp/tmp.fuk");
   else
-    savePGM(src->B, "/tmp/tmp.fuk");
+    savePGM(src->A, "/tmp/tmp.fuk");
   return;
 }
 
 /*Function that deletes a dspWin */
-template <typename T>
-void deleteDspWin(dspWin<T> *target) {
+void deleteDspWin(dspWin *target) {
   delete target->A;
   delete target->B;
   delete [] target->C;
@@ -238,8 +255,7 @@ void deleteDspWin(dspWin<T> *target) {
 /*Calls function on B*/
 //file is stored at ./tmp.fuk (in) and tmp2.fuk (out)
 //these are imbedded in params
-template <typename T>
-void callFunct(dspWin<T> *target, int i, char **par){
+void callFunct(dspWin *target, int i, char **par){
   //save temporary copy
   saveTMP(target);
     
@@ -290,10 +306,9 @@ void callFunct(dspWin<T> *target, int i, char **par){
 }
 
 //Function that loads file into B
-template <typename T>
-void load2B(dspWin<T> *target, char *filePath) {
+void load2B(dspWin *target, char *filePath) {
   delete target->B;
-  if (target->isRGB)
+  if (target->A->isRGB)
     target->B = loadPPM(filePath);
   else
     target->B = loadPGM(filePath);
@@ -302,14 +317,14 @@ void load2B(dspWin<T> *target, char *filePath) {
 
 /*Function that changes B and C back into copy
   gotten from A */
-
-template <typename T>
-void revert2A(dspWin<T> *target) {
+/*
+void revert2A(dspWin *target) {
   delete target->B;
   delete[] target->C;
   target->B = target->A->copy();
   get_C_ready(target);
   return;
 }
+*/
 
 #endif

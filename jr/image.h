@@ -5,20 +5,19 @@
 
 #include <cstring>
 
-template <class T>
 class image {
  public:
   /* create an image */
-  image(const int width, const int height, const bool init = true);
+  image(const int width, const int height, const bool colored);
 
   /* delete an image */
   ~image();
 
   /* init an image */
-  void init(const T &val);
+  void init(const unsigned char &val);
 
   /* copy an image */
-  image<T> *copy() const;
+  image *copy() const;
   
   /* get the width of an image. */
   int width() const { return w; }
@@ -27,13 +26,13 @@ class image {
   int height() const { return h; }
   
   /* image data. */
-  T *data;
+  unsigned char *data;
   
   /* row pointers. */
-  T **access;
+  unsigned char **access;
   
- private:
-  int w, h;
+  int w, h, pixelCount;
+  bool isRGB;
 };
 
 /* use imRef to access image data. */
@@ -42,40 +41,35 @@ class image {
 /* use imPtr to get pointer to image data. */
 #define imPtr(im, x, y) &(im->access[y][x])
 
-template <class T>
-image<T>::image(const int width, const int height, const bool init) {
+image::image(const int width, const int height, const bool colored) {
   w = width;
   h = height;
-  data = new T[w * h];  // allocate space for image data
-  access = new T*[h];   // allocate space for row pointers
+  isRGB = colored;
+  pixelCount = isRGB?3:1;
+  data = new unsigned char[w * h * pixelCount];  // allocate space for image data
+  access = new unsigned char*[h];   // allocate space for row pointers
   
   // initialize row pointers
   for (int i = 0; i < h; i++)
-    access[i] = data + (i * w);  
-  
-  if (init)
-    memset(data, 0, w * h * sizeof(T));
+    access[i] = data + (i * w * pixelCount);  
 }
 
-template <class T>
-image<T>::~image() {
+image::~image() {
   delete [] data; 
   delete [] access;
 }
 
-template <class T>
-void image<T>::init(const T &val) {
-  T *ptr = imPtr(this, 0, 0);
-  T *end = imPtr(this, w-1, h-1);
+void image::init(const unsigned char &val) {
+  unsigned char *ptr = imPtr(this, 0, 0);
+  unsigned char *end = imPtr(this, w-1, h-1);
   while (ptr <= end)
     *ptr++ = val;
 }
 
 
-template <class T>
-image<T> *image<T>::copy() const {
-  image<T> *im = new image<T>(w, h, false);
-  memcpy(im->data, data, w * h * sizeof(T));
+image *image::copy() const {
+  image *im = new image(w, h, isRGB);
+  memcpy(im->data, data, w * h * pixelCount);
   return im;
 }
 
