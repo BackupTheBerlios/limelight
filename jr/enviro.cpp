@@ -82,9 +82,8 @@ void mousefn ( int button, int updown, int x, int y ){
   glutPostRedisplay () ;
 }
 
-void dispfnWinA(){
+void dispfnWinA(){ 
   glutSetWindow(winA);
-  
   glClearColor ( 0.9, 1.0, 0.9, 1.0 ) ;
   glClear ( GL_COLOR_BUFFER_BIT ) ;
   
@@ -133,14 +132,15 @@ void keyb(unsigned char key, int x, int y){
 void openFileCB(puObject*){
   char* fileName;
   openDialogBox->getValue(&fileName);
-  
   loadedImg = initDspWin(fileName); //from dspWin.h
-
+  cout << "the image was loaded cool\n";
   //create the windows for it, booh ya ka-sha!
   glutInitWindowSize(loadedImg->A->height(), loadedImg->A->width());
+  cout << "do the access work?\n";
   winA = glutCreateWindow(fileName);
+  cout << "did create window work\n";
   glutDisplayFunc(dispfnWinA);
-  
+  cout << "does the display a work?\n"; 
   glutInitWindowSize(loadedImg->A->height(), loadedImg->A->width());
   winB = glutCreateWindow(fileName);
   glutDisplayFunc(dispfnWinB);
@@ -186,12 +186,17 @@ void paramsWinOKCB(puObject*){
   params[paramsWinObjects.size()+3] = '\0';
 
   //clear the params so the next loaded function will be able to make them
-  paramsWinObjects.clear();
+  //paramsWinObjects.clear();
+
+  cout << "TESTING" << endl;
+  int k=0;
+  while(params[k] != '\0')
+    cout << params[k++] << endl;
 
   glutSetCursor(GLUT_CURSOR_WAIT); //make a cool wait cursor for while the function is running
   callFunct(loadedImg, curFunction, params); //from dspWin.h
   glutSetCursor(GLUT_CURSOR_INHERIT);
-
+    
   //now redisplay c in winb
   glutSetWindow(winB);
   glutPostRedisplay();
@@ -311,15 +316,18 @@ void addFuncFinalCB(puObject*){
   while(j < addFuncParams.size()){
     parameter tmp;
     char *tmp1 = new char[80];
-    addFuncParams[j++]->getValue(tmp1);
+    addFuncParams[j]->getValue(tmp1);
+    puDeleteObject(addFuncParams[j++]);
     cout << "param name: " << tmp1 << endl;
     tmp.name = tmp1;
     tmp1 = new char[80];
-    addFuncParams[j++]->getValue(tmp1);
+    addFuncParams[j]->getValue(tmp1);
+    puDeleteObject(addFuncParams[j++]);
     cout << "param type: " << tmp1 << endl;
     tmp.type = tmp1;
     addFuncParamsValues.push_back(tmp);
   }
+  puDeleteObject(ok);
   //ok call this fucker
   //these all need to be changed to string
   string name, path;
@@ -334,15 +342,38 @@ void exitCB(puObject*){ //work on this later, we need to pass all of this shyte
   //delete all of this memory
   puDeleteObject(mainMenu);
   //FIX NEEDED -- dealocate memory
-  if(!imgsOnScr.empty())
-    deleteDspWin(imgsOnScr[curImg]);//that'll do for now
+ 
+  deleteDspWin(loadedImg);//that'll do for now
   glutDestroyWindow(mainWin);
+  glutDestroyWindow(winA);
+  glutDestroyWindow(winB);
   exit(0);
 }
 
 //FILE MENU -- SAVE CALLBACK
 void saveCB(puObject*){
   saveDspWin(loadedImg);
+}
+
+//FILE MENU -- SAVE FILE AS CALLBACK
+void saveFileAsCB(puObject*){
+  char *tmp = new char[200];
+  openDialogBox->getValue(tmp);
+  cout << "path: " << tmp << "|" << endl;
+  puDeleteObject(openDialogBox);
+  
+  saveDspWin(loadedImg, tmp);
+  cout << "file saved as successfully\n";
+  delete[] tmp;
+}
+
+
+//FILE MENU -- SAVE AS CALLBACK
+void saveAsCB(puObject*){
+  openDialogBox = new puFileSelector(0, 0, 252, 324, "", "Please print to where you want to save");
+  openDialogBox->setInitialValue(""); //make this pretty later
+  openDialogBox->setChildBorderThickness(PUCLASS_INPUT, 1);
+  openDialogBox->setCallback(saveFileAsCB);
 }
 
 int main ( int argc, char **argv ){
@@ -365,11 +396,12 @@ int main ( int argc, char **argv ){
   //menus must be declared backwards and we get seg faults if we don't make the char of a specified array length
 
   char **file_submenu = new (char*)[10];
-  file_submenu[3] = "Open";
-  file_submenu[2] = "Add new function";
-  file_submenu[1] = "Save";
+  file_submenu[4] = "Open";
+  file_submenu[3] = "Add new function";
+  file_submenu[2] = "Save";
+  file_submenu[1] = "Save As";
   file_submenu[0] = "Exit";
-  puCallback file_submenu_cb [4] = { exitCB, saveCB, addFuncCB, openCB};
+  puCallback file_submenu_cb [5] = { exitCB, saveAsCB, saveCB, addFuncCB, openCB};
 
   //read in functions and make a glut style menu
   createMenu("funct.fuk", loadedFunctions); //load 'er up

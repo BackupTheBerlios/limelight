@@ -16,5 +16,5 @@ CoolFunc3 ./coolFunc3 param1 int param2 int param3 bool
 Segment /home/smitht/segment/segment Sigma int K int Min int 
 noParamsFunction ./crazy 
 noParamsFunction12 ./crazy 
-#seg /home/smitht/tmp/jr/dspWin.h 23 asdf 
-#go /home/smitht/tmp/jr/Makefile 12 34 
+serg /home/smitht/tmp/jr/dspWin.h asdf int 
+new /home/smitht/tmp/jr/enviro.cpp one int two bool 
