@@ -16,6 +16,7 @@
   Stage A : Image X as it is currently on disk
   Stage B : Unsaved modifications of Stage A
   Stage C : The data in B as OpenGL needs it
+  Stage D : The date in A as OpenGL needs it
 */
 
 /*
@@ -48,6 +49,7 @@ struct dspWin {
 
 //prototypes
 void get_C_ready (dspWin *target);
+void get_D_ready (dspWin *target);
 dspWin* initDspWin(char *filePath);
 void saveDspWin(dspWin *src, char *filePath);
 void deleteDspWin(dspWin *target);
