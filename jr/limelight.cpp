@@ -29,17 +29,21 @@ else
 /******************the great to do list: ****************
 
  *hmmmm... i think that we can totally get rid of c and d... (glPixelZoom(1.0,-1.0)), haha. except giving it a neg num doesnt work (WTF??)
- *check out disabling gl states we dont use -- for macs and linux
+ *check out disabling gl states we dont use -- for macs and linux -- DONE
  *remeber to not compile with -g in the final makefile
- *reset the zoom and pan stuff when we open a new image
- *kill save
- *on linux kill the windows thing
+ *kill save -- DONE
+ *on linux kill the windows thing (when someone hits a child window's X don't make it close), also make it so you cant resize the image windows
+ *error checking for this entire program, specifically if the executable isn't there for a function call, if an image didn't load correctly,
+  or wasn't there, etc..
+ *dspWin.h doesn't need save or save as distinction anymore
 
  *wish list:
  *add a printout from the stdout (this one is a little hard, we need to make it pipe the exec) -- dup2 to a text file so people can look at it later
  *enable tab for inputs and return for buttons (possible?)
  *make pan amount not so slow when zoomAmount < 5
  *TO DO: we should probably add some check to make sure there are values in the params...
+ *currently, when saving a file it will overwrite if one exists with the specified name, we should ask if this is the case
+ *see what gl states macs can actually use
 
 */
 
@@ -71,7 +75,6 @@ void closeCB(puObject*);
 void exitCB(puObject*);
 void openCB(puObject*);
 void saveCB(puObject*);
-void saveAsCB(puObject*);
 
 //help menu callbacks
 void aboutCB(puObject*);
@@ -79,7 +82,7 @@ void helpCB(puObject*);
 
 //pop up box callbacks
 void openFileWinCB(puObject*);
-void saveAsWinCB(puObject*);
+void saveWinCB(puObject*);
 
 //main window
 void callFuncCB(puObject*);
@@ -476,11 +479,9 @@ void keyb(unsigned char key, int x, int y){
       openCB(mainMenu);
   }
   
-  if(key=='s'){ //save & save as
+  if(key=='s'){ //save
     if(glutGetModifiers()==KEYCONST)
       saveCB(mainMenu);
-    else if(glutGetModifiers()==(GLUT_ACTIVE_ALT|GLUT_ACTIVE_SHIFT)) //for some reason this also doesnt work
-      saveAsCB(mainMenu);
   }
 }
 
@@ -511,22 +512,13 @@ void openCB(puObject*){
   openDialogBox->setCallback(openFileWinCB);
 }
 
-//FILE MENU -- SAVE CALLBACK
-void saveCB(puObject*){
-  if(loadedImg != NULL){
-  saveDspWin(loadedImg);//this saves the image
-  get_C_ready(loadedImg);//nice job josh, this is fuckin beautiful
-  get_D_ready(loadedImg);//and so on...
-  }
-}
-
 //FILE MENU -- SAVE AS CALLBACK
-void saveAsCB(puObject*){
+void saveCB(puObject*){
   if(loadedImg != NULL){
     openDialogBox = new puFileSelector(0, 0, 252, 324, "", "Please type where you want to save");
     openDialogBox->setInitialValue(""); //make this pretty later
     openDialogBox->setChildBorderThickness(PUCLASS_INPUT, 1);
-    openDialogBox->setCallback(saveAsWinCB);
+    openDialogBox->setCallback(saveWinCB);
   }
 }
 
@@ -559,22 +551,22 @@ void openFileWinCB(puObject*){
 }
 
 //SAVE FILE AS DIALOG BOX CALLBACK
-void saveAsWinCB(puObject*){
+void saveWinCB(puObject*){
   char *tmp = new char[200];
   openDialogBox->getValue(tmp);    
   
   //check to see if the cancel button was hit (is this string conv neccesary?)
   string fileName = tmp;
+  
+  //checks for cancel button
   if(fileName.size() == 0){
     puDeleteObject(openDialogBox);
     return;
   }
-
-  saveDspWin(loadedImg, tmp);
-  //so here, we should actually reload the entire img, so as to rename the win names, etc.
-  //in the future this could be a place for improvement, cuz we don't actually need to call
-  //the entire open sequence...
-  openFile(tmp);
+  
+  saveDspWin(loadedImg, tmp);//from dspWin.h -- actually saves the image
+  
+  puDeleteObject(openDialogBox); //remove dialog box from screen
   delete[] tmp;
 }
 
@@ -730,6 +722,31 @@ void openFile(char* fileName){
   
   loadedImg = initDspWin(fileName); //from dspWin.h
   
+  //reset the pan and zoom variable BEFORE loading images onto screens
+  //for winA
+  mouseOnA = 0;
+  posWidthA = 0;
+  posHeightA = 0;
+  newOffXA=0.0;
+  newOffYA=0.0;
+  offSetXA=0.0;
+  offSetYA=0.0;
+  zoomA=0;
+  zoomAmountA=1.0;
+  zoomOffSetYA=0.0;
+
+  //for winB
+  mouseOnB = 0;
+  posWidthB=0;
+  posHeightB=0;
+  newOffXB=0.0;
+  newOffYB=0.0;
+  offSetXB=0.0;
+  offSetYB=0.0;
+  zoomB=0;
+  zoomAmountB=1.0;
+  zoomOffSetYB = 0.0;
+
   //create the windows for it, booh ya ka-sha!
   glutInitWindowSize(loadedImg->A->height(), loadedImg->A->width());
   string nameA = "Original: ";
@@ -789,9 +806,10 @@ int main ( int argc, char **argv ){
   }
   
   //here's some performance improvements (WOW!, that's a LOT quicker)
-  //i think that we only need to disable them in main (not for every window)
+  //i think that we only need to disable them once (not for every window)
   //framebuffer ops we don't need
-  /*
+  
+#ifndef __APPLE__ //apple doesn't seem to like this guys
   glDisable(GL_SCISSOR_TEST);
   glDisable(GL_ALPHA_TEST);
   glDisable(GL_STENCIL_TEST);
@@ -802,8 +820,8 @@ int main ( int argc, char **argv ){
   glDisable(GL_TEXTURE_2D);
   glDisable(GL_TEXTURE_3D);
   glDisable(GL_LIGHTING);
-  glDisable(GL_FOG);
-  */
+  glDisable(GL_FOG);  
+#endif
 
   //intialize the limelight function params window aka main window
   glutInitWindowSize ( 250, 400 ) ;
@@ -818,7 +836,6 @@ int main ( int argc, char **argv ){
   glutSetWindow(mainWin);
   puInit();
   puDisplay();  
-
   
   //read in functions and make the drop down menu
   createMenu(argv[1], loadedFunctions); //load 'er up
@@ -846,12 +863,13 @@ int main ( int argc, char **argv ){
   top->setStyle(PUSTYLE_BOXED);
   top->setBorderThickness(1);  
 
+  //help menu
   char *help_submenu[4] = {"Help", "-----", "About", NULL};
   puCallback help_submenu_cb [4] = {helpCB, NULL, aboutCB, NULL};
 
   //file menu 
-  char *file_submenu[8] = {"Exit           Alt+Q", "--------------------", "Save as   Alt+Shft+S", "Save           Alt+S", "--------------------","Close          Alt+W", "Open           Alt+O", NULL};
-  puCallback file_submenu_cb [8] = { exitCB, NULL, saveAsCB, saveCB, NULL, closeCB, openCB, NULL};
+  char *file_submenu[7] = {"Exit           Alt+Q", "--------------------", "Save Output    Alt+S", "--------------------","Close          Alt+W", "Open           Alt+O", NULL};
+  puCallback file_submenu_cb [7] = { exitCB, NULL, saveCB, NULL, closeCB, openCB, NULL};
   
   //make the main menu
   mainMenu = new puMenuBar( -1);
