@@ -46,6 +46,7 @@ else
  *add keyboard shortcuts (cuz that's cool) -- kinda done, except cant get ctrl or shift to work... (whats up with that?)
  *itd be cool to add errors and popups / disable menu items for when you cannot do things
  *load the first function on the list into the window -- DONE ts (3/12)
+
 */
 
 using namespace std;
@@ -100,9 +101,16 @@ int curFunction; //set this when a function menu item is called
 dspWin* loadedImg; //this is the loaded image woohoo!
 int mainWinWidth, mainWinHeight; //these aren't used right now, but they should eventually be used to increase the size if the params are very large
 int winA, winB; //these will be the image windows, ROCK AND ROLL
-//stuff for zoom
+
+//stuff for zoom and pan
 int mouseOn = 0;
 int posWidth, posHeight;
+int newOffX=0;
+int newOffY=0;
+int offSetX=0;
+int offSetY=0;
+int zoom=0;
+double zoomAmount=1.0;
 
 //pui globals
 puFileSelector *addFuncPath;
@@ -131,60 +139,89 @@ struct parameter {
 
 list<parameter> addFuncParamsValues; //the entires will be name, then type, ok not cool, pui is lame
 
-void motionfn ( int x, int y ){
-  puMouse ( x, y ) ;
-  glutPostRedisplay () ;
+void motionfn(int x, int y){
+  puMouse(x, y);
+  glutPostRedisplay();
 }
 
-void mousefn ( int button, int updown, int x, int y ){
-  puMouse ( button, updown, x, y ) ;
-  glutPostRedisplay () ;
+void mousefn(int button, int updown, int x, int y){
+  puMouse(button, updown, x, y );
+  glutPostRedisplay();
 }
 
-void motionfnWinA (/* int button, int updown, */int x, int y ){
-  if(mouseOn == 1){
+void motionfnWinA(int x, int y ){
+  //for the pan
+  
+  newOffX=(posWidth-x)/2;
+  newOffY=(posHeight-y)/2;
+  
+  offSetX += newOffX;
+  offSetY += newOffY;
     
-    int offsetX, offsetY;
-    offsetX = (-posWidth-x);
-    offsetY = (-posHeight-y);
-    if(offsetX < 0) offsetX = -offsetX;
-    if(offsetY < 0) offsetY = -offsetY;
-    //if(offsetX > loadedImg->A->width()/2) offsetX = loadedImg->A->width()/2;
-    //if(offsetY > loadedImg->A->height()/2) offsetY = loadedImg->A->height()/2;
-
-    cout << "offset y: " << (posHeight-y) << " offset x: " << (posWidth-x) << endl;
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glPixelStorei(GL_UNPACK_SKIP_ROWS, offsetY);
-    glPixelStorei(GL_UNPACK_SKIP_PIXELS, offsetX);
-    glRasterPos2i(-1,-1 );
-    glPixelZoom(2.0,2.0);
-    glDrawPixels(loadedImg->A->width(),
-		 loadedImg->A->height(),
-		 GL_RGB,
-		 GL_UNSIGNED_BYTE,
-		 loadedImg->D);
-    glutPostRedisplay();
+  if(offSetX<0)offSetX=0;
+  if(offSetY<0)offSetY=0;
+  if(offSetX > (loadedImg->A->width() / 2)) offSetX = (loadedImg->A->width() / 2);
+  if(offSetY > (loadedImg->A->height() / 2)) offSetY = (loadedImg->A->height() / 2);
+  
+  cout << "offset y: " << offSetY << " offset x: " << offSetX << endl;
+  //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_UNPACK_SKIP_ROWS, offSetY);
+  glPixelStorei(GL_UNPACK_SKIP_PIXELS, offSetX);
+  glRasterPos2i(-1,-1 );
+  glPixelZoom(2.0,2.0);
+  glDrawPixels(loadedImg->A->width(),
+	       loadedImg->A->height(),
+	       GL_RGB,
+	       GL_UNSIGNED_BYTE,
+	       loadedImg->D);
+  //i think that we don't need these things if we just call the actual display function
+  //when this works see what else we can jack out of it
+  dispfnWinA();
+  glutPostRedisplay();
     glutSwapBuffers();
-  }
-  else{
-    glutPostRedisplay();
-    glutSwapBuffers();
-  }
+    
+  //for the zoom
+  /*if(zoom==1){
+    newOffY=(posHeight-y)/2;
+    
+    offSetY += newOffY;
+    
+    offSetY /= 10;
+    zoomAmount += (double)offSetY;
+    //glPixelZoom(zoomAmount,zoomAmount);
+    dispfnWinA();
+    return;
+    }*/
 }
 
-void mousefnWinA ( int button, int updown, int x, int y ){
+void mousefnWinA(int button, int updown, int x, int y){
+  
+  //for zoom
+  /*if(glutGetModifiers() == GLUT_ACTIVE_SHIFT){
+    zoom = 1;
+    if(updown == GLUT_DOWN){
+      cout << "start zoom\n";
+      posHeight=y;
+    }
+    return;
+    }*/
+
+  //for the pan
   if(updown == GLUT_DOWN){
     if(mouseOn == 1)
       return;
     else{
-      cout << "setting posWidth " << x << " posHeight " << y << endl;
       mouseOn = 1;
-      posWidth = x/2;
-      posHeight = y/2;
+      posWidth = x;
+      posHeight = y;
+      cout << "setting posWidth " << x << " posHeight " << y << endl;
+      glutSetCursor(GLUT_CURSOR_INFO);
     }
   }
   else if (updown == GLUT_UP) 
+    glutSetCursor(GLUT_CURSOR_INHERIT);
     mouseOn = 0;
+    
 }
 
 void dispfnWinA(){ 
@@ -229,7 +266,7 @@ void displayfn(){
 void keyb(unsigned char key, int x, int y){
   puKeyboard(key, PU_DOWN); //so we need this on our keyboard thing to have that work....
   glutPostRedisplay();
- 
+   
   if(glutGetModifiers() == GLUT_ACTIVE_ALT)
     glutSetCursor(GLUT_CURSOR_DESTROY);
 
