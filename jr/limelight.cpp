@@ -31,6 +31,8 @@ else
  *make the open image "cancel" button work -- DONE ts (3/11)
  *'save'/ 'save as' needs to reload B -- DONE ts (3/11)
  *kill the glut menus -- DONE ts (3/11)
+ *hmmmm... i think that we can totally get rid of c and d... (glPixelZoom(1.0,-1.0)), haha.
+ *check out disabling gl states we dont use
 
  *other improvements: 
  *'close' menu item -- DONE ts (3/11)
@@ -142,7 +144,7 @@ void dispfnWinA(){
   
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glRasterPos2i(-1,-1 );
-  glDrawPixels(loadedImg->A->width(), 
+  glDrawPixels(loadedImg->A->width(),
 	       loadedImg->A->height(),
 	       GL_RGB,
 	       GL_UNSIGNED_BYTE,
@@ -232,16 +234,19 @@ void openFile(char* fileName){
   }
 
   loadedImg = initDspWin(fileName); //from dspWin.h
-
+  
   //create the windows for it, booh ya ka-sha!
   glutInitWindowSize(loadedImg->A->height(), loadedImg->A->width());
-
-  winA = glutCreateWindow(fileName);
+  string nameA = "Original: ";
+  nameA += fileName;
+  winA = glutCreateWindow(nameA.c_str());
   glutDisplayFunc(dispfnWinA);
   glutKeyboardFunc(keyb);
 
   glutInitWindowSize(loadedImg->A->height(), loadedImg->A->width());
-  winB = glutCreateWindow(fileName);
+  string nameB = "Output: ";
+  nameB += fileName;
+  winB = glutCreateWindow(nameB.c_str());
   glutDisplayFunc(dispfnWinB);
   glutKeyboardFunc(keyb);
 
@@ -512,13 +517,13 @@ void make_dialog(const char *txt){
   if(popupBox != NULL)
     return ;
   
-  popupBox = new puDialogBox(25, 100);
+  popupBox = new puDialogBox(25, 25);
   {
-    puFrame *tmp1 = new puFrame(0, 0, 200, 125);
+    puFrame *tmp1 = new puFrame(0, 0, 200, 225);
     tmp1->setBorderThickness(3);
-    puText *tmp = new puText(10, 95);
+    puText *tmp = new puText(10, 200);
     tmp->setLabel(txt);
-
+    
     puOneShot *ok = new puOneShot (160, 10, "OK" ) ;
     ok->makeReturnDefault(TRUE);
     ok->setCallback(go_away_callback);
@@ -535,7 +540,7 @@ void helpCB(puObject*){
 
 //HELP MENU -- about callback
 void aboutCB(puObject*){
-  make_dialog("here's some cool stuff\nabout the program\n");
+  make_dialog("This program is the \nculmination of 10 \nweeks of work by \nJosh Schwartz and \nTrevor Smith. Thanks \ngo to Yitz and Rio, \nfor answering our \nmultitude of questions,\nand especially to Yitz \nfor suggesting that \nwriting code for \nXServer is a bad \nidea. Thanks to Pedro \nfor believing that we \ncould create this \nprogram.");
 }
 
 //FILE MENU -- SAVE AS CALLBACK
@@ -563,7 +568,7 @@ int main ( int argc, char **argv ){
   glutInitWindowSize ( mainWinHeight, mainWinWidth ) ;
   glutInit ( &argc, argv ) ;
   glutInitDisplayMode ( GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH ) ;
-  mainWin = glutCreateWindow ("limelight jr" ) ;
+  mainWin = glutCreateWindow ("limelight" ) ;
   glutDisplayFunc ( displayfn ) ;
   glutMouseFunc ( mousefn ) ;
   glutMotionFunc ( motionfn ) ;
@@ -605,8 +610,9 @@ int main ( int argc, char **argv ){
   puCallback help_submenu_cb [4] = {helpCB, NULL, aboutCB, NULL};
 
   //file menu 
-  char *file_submenu[10] = {"Exit           Alt+Q", "--------------------", "Save as   Alt+Shft+S", "Save           Alt+S", "--------------------", "Add new function", "--------------------","Close          Alt+W", "Open           Alt+O", NULL};
-  puCallback file_submenu_cb [10] = { exitCB, NULL, saveAsCB, saveCB, NULL, addFuncCB, NULL, closeCB, openCB, NULL};
+  //for now, we have now "add function" menu item, cuz i dont feel like making it good.
+  char *file_submenu[8] = {"Exit           Alt+Q", "--------------------", "Save as   Alt+Shft+S", "Save           Alt+S",/* "--------------------", "Add new function",*/ "--------------------","Close          Alt+W", "Open           Alt+O", NULL};
+  puCallback file_submenu_cb [8] = { exitCB, NULL, saveAsCB, saveCB, /*NULL, addFuncCB,*/ NULL, closeCB, openCB, NULL};
   
   //make the main menu
   mainMenu = new puMenuBar ( -1 );

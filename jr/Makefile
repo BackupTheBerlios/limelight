@@ -19,7 +19,7 @@ CFLAGS = $(COMPILERFLAGS) $(INCDIR)
 #FOR LINUX
 LIBRARIES = -lm -lX11 -lglut -lstdc++ -lplibpu -lplibfnt -lplibul
 
-all: enviro
+all: limelight
 
 complex: complex.cxx
 	$(CC) $(CFLAGS) $(FRAMEWORK) -o complex complex.cxx $(LIBDIR) $(LIBRARIES)
@@ -33,8 +33,8 @@ widgets: widget_list.cxx
 twoWinTest: twoWinTest.cpp
 	$(CC) $(CFLAGS) $(FRAMEWORK) -o twoWinTest twoWinTest.cpp $(LIBDIR) $(LIBRARIES)
 
-enviro: enviro.cpp
-	$(CC) $(CFLAGS) $(FRAMEWORK) -o enviro enviro.cpp $(LIBDIR) $(LIBRARIES)
+limelight: limelight.cpp
+	$(CC) $(CFLAGS) $(FRAMEWORK) -o limelight limelight.cpp $(LIBDIR) $(LIBRARIES)
 
 hello: hello.cpp
 	$(CC) $(CFLAGS) $(FRAMEWORK) -o hello hello.cpp $(LIBDIR) $(LIBRARIES)
