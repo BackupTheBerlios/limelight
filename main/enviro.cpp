@@ -31,7 +31,6 @@ vector<dspWin*> imgsOnScr; //this is the images currently on the screen
 int curImg;
 int w2; // tsk, tsk, so messy, we'll take care of this soon
 int curFunction; //set this when a function menu item is called
-int fuck; //TEMP
 
 /********/
 
@@ -60,10 +59,6 @@ void displayfn ()
   if(!imgsOnScr.empty() && glutGetWindow() == imgsOnScr[curImg]->winNum){
     //cout << "does this get called?\n";
     glCallList(curImg+1);
-  }
-
-  if(fuck == 6){
-    glCallList(6);
   }
 
   /*the above needs to be changed to lists of display lists... check it out below
@@ -175,8 +170,8 @@ void paramsWinOKCB(puObject*){
   
 
   glutSetWindow(imgsOnScr[curImg]->winNum);
-  fuck = 6;
-  glNewList(6, GL_COMPILE);
+ 
+  glNewList(curImg+1, GL_COMPILE);
   glRasterPos2i(-1,-1 ); //what is up with this? 0,0 supposed to be lower left corner...
   glDrawPixels(imgsOnScr[curImg]->A->width(), 
 	       imgsOnScr[curImg]->A->height(),
