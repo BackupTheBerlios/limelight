@@ -92,6 +92,12 @@ void openFile(char* fileName);
 
 /* **************************** GLOBALS *************************** */
 
+struct ltstr{ //used for the funcMap
+  bool operator()(const char* s1, const char* s2) const{
+    return strcmp(s1, s2) < 0;
+  }
+};
+
 map<const char *, int, ltstr> funcMap; // this is here for the drop down menu, cuz it only return char* (never again pui, never again)
 puMenuBar *mainMenu;
 puFileSelector *openDialogBox = 0;
@@ -130,13 +136,6 @@ struct parameter {
 };
 #endif
 
-struct ltstr{ //used for the funcMap
-  bool operator()(const char* s1, const char* s2) const{
-    return strcmp(s1, s2) < 0;
-  }
-};
-
-
 /* ******************** GLUT WINDOW CALL BACKS ******************** */
 
 //main window
@@ -174,7 +173,7 @@ void dispfnWinA(){
     glClear(GL_COLOR_BUFFER_BIT);
     glPixelZoom(zoomAmount,zoomAmount);
     glPixelStoref(GL_UNPACK_ALIGNMENT, 1);
-    glRasterPos2i(-1.0,-1.0);
+    glRasterPos2i(-1,-1);
     glDrawPixels(loadedImg->A->width(),
 		 loadedImg->A->height(),
 		 GL_RGB,
