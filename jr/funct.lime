@@ -1,22 +1,23 @@
-# func.fuk
+# funct.lime
 # this is the functions defintion file
 #
 # this is a comment, you cannot have multi line comments in this file
 #
-# functions take this form:
+# We implore you to read this document carefully - if the syntax for .lime files is not followed exactly,
+# the program is likely to crash or give other, more nefarious errors.
+#
+# That being said, functions take this form:
 # name path_to _executable param1Name param1Type ... paramNName paramNType '\n'
-# name is the name you will see on the menu
-# paramType is either: int, bool --- ADD enum types which make radio buttons || listboxes
-# I'd like to change the param type to int instead of string later...
+# name is the name you will see on the menu - please choose this so that you will recognize it within the program
+# paramType is currently either: int or bool 
+# all functions must have "input file" and "output file" in the appropriate place in the parameters list
+# functions need not have other parameters
 # example function defintion:
-# lineDetect ./lineDetect precision int coolness bool
+# lineDetect ./lineDetect input file output file precision int coolness bool
+# all of these functions are legitimate:
 Segment /home/smitht/segment/segment Sigma int K int Min int input file output file
 Noise /home/vegan/bp-vision/noise input file output file amount int
 Restore /home/vegan/bp-vision/restore input file output file
-Black ../../alpha/funcTest Color int
-CoolFunc1 ./coolFunc1 param1 int
-CoolFunc2 ./coolFunc2 Yaw int Attack? bool Hue int Magic int Cool bool
-CoolFunc3 ./coolFunc3 param1 int param2 int param3 bool
-noParamsFunction ./crazy
-noParamsFunction12 ./crazy
+
+
 
