@@ -18,12 +18,12 @@ else
 #include <math.h>
 #include <plib/pu.h>
 #include <iostream>
-#include <vector.h>
+#include <vector>
 #include <string>
 #include <map>
 
 //this is changed for BETA - js 3/17?
-#include "functReadCONFIG.h" 
+#include "functRead.h" 
 #include "dspWin.h" 
 #include "functionFileCreator.h"
 
@@ -188,9 +188,12 @@ void motionfnWinA(int x, int y ){
     
     if(offSetX<0)offSetX=0;
     if(offSetY<0)offSetY=0;
+    //tmp stuff now now
+    float tmp = 1.0/zoomAmount;
+    tmp = 1 - tmp;
     
-    if(offSetX > ((double)loadedImg->A->width() / zoomAmount)) offSetX = ((double)loadedImg->A->width() / zoomAmount);
-    if(offSetY > ((double)loadedImg->A->height() / zoomAmount)) offSetY = ((double)loadedImg->A->height() / zoomAmount);
+    if(offSetX > ((double)loadedImg->A->width() * tmp)) offSetX = ((double)loadedImg->A->width() * tmp);
+    if(offSetY > ((double)loadedImg->A->height() * tmp)) offSetY = ((double)loadedImg->A->height() * tmp);
     cout << "zoomAmout: " << zoomAmount << endl;
     cout << "offsetY: " << offSetY << " " << "offSetX: " << offSetY << endl;
     cout << "height: " << (double)loadedImg->A->height()/zoomAmount << " width: " << (double)loadedImg->A->width()/zoomAmount << endl;
