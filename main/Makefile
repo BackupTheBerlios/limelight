@@ -19,7 +19,19 @@ CFLAGS = $(COMPILERFLAGS) $(INCDIR)
 #FOR LINUX
 LIBRARIES = -lm -lX11 -lglut -lstdc++ -lplibpu -lplibfnt -lplibul
 
-all: puiTest
+all: complex simple widgets
+
+complex: complex.cxx
+	$(CC) $(CFLAGS) $(FRAMEWORK) -o complex complex.cxx $(LIBDIR) $(LIBRARIES)
+
+simple: simple.cxx
+	$(CC) $(CFLAGS) $(FRAMEWORK) -o simple simple.cxx $(LIBDIR) $(LIBRARIES)
+
+widgets: widget_list.cxx
+	$(CC) $(CFLAGS) $(FRAMEWORK) -o widgetList widget_list.cxx $(LIBDIR) $(LIBRARIES)
+
+twoWinTest: twoWinTest.cpp
+	$(CC) $(CFLAGS) $(FRAMEWORK) -o twoWinTest twoWinTest.cpp $(LIBDIR) $(LIBRARIES)
 
 enviro: enviro.cpp
 	$(CC) $(CFLAGS) $(FRAMEWORK) -o enviro enviro.cpp $(LIBDIR) $(LIBRARIES)

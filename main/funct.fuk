@@ -11,7 +11,7 @@
 # example function defintion:
 # lineDetect ./lineDetect precision int coolness bool
 CoolFunc1 ./coolFunc1 param1 int 
-CoolFunc2 ./coolFunc2 param1 int param2 bool 
+CoolFunc2 ./coolFunc2 Yaw int Attack? bool Hue int Magic int Cool bool 
 CoolFunc3 ./coolFunc3 param1 int param2 int param3 bool 
 noParamsFunction ./crazy 
 noParamsFunction12 ./crazy 

@@ -1,4 +1,4 @@
-//this file is for testing the pui library, here you can see exactly how one uses it.
+//this is the main file
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,14 +15,22 @@ else
 #include <vector>
 
 #include "functRead.h" //what a bad name for this header file
+
 using namespace std;
 
-/*********************ok here we go this will be a class but i dont feel like making a class right now *************/
+/*********************ok here we go: this will be a class but i dont feel like making a class right now *************/
 
 vector<function> loadedFunctions; //this is read in from the funct.fuk file
 puMenuBar *mainMenu;
 puFileSelector *openDialogBox;
 int mainWin;
+vector<puObject*> paramsWinObjects;
+puDialogBox *paramsWin; //this is an ugly hack for now
+
+//???
+void(*funct)();
+
+vector< void(*funct)() > cbs;  
 
 /********/
 
@@ -68,17 +76,93 @@ void openFileCB(puObject*){
   
   puDeleteObject(openDialogBox);
   
-  cout << "open the file: " << fileName << endl;
+  //we need to add some kind of if clause for the cancel button
+  //but the cancel button doesn't have it's own callback
+
+  cout << "open the file: " << fileName << "|" << endl;
 }
 
 //FILE MENU -- OPEN CALLBACK
 void openCB(puObject*){
   openDialogBox = new puFileSelector(50, 50, "./", "Please select a file");
+  openDialogBox->setInitialValue(" ");
   openDialogBox->setChildBorderThickness(PUCLASS_INPUT, 1);
   openDialogBox->setCallback(openFileCB);
 }
 
+//PARAMS WINDOW -- CANCEL CALLBACK
+void paramsWinCancelCB(puObject*){
+  delete paramsWin;
+}
+
+//CBS FOR FUNCTIONS
+void funcCBS(){
+  for(int i=0;i<loadedFunctions.size();i++){
+    void CB(puObject*){ createParamsWin(i);}
+    func = CB(puObject*);
+    cbs.push_back(func);
+  }
+}
+
+//FUNCTION MENU -- CALLBACK
+void createParamsWin(int num){
+  //this is lame, but we cannot pass anything in here, so we need to gather what function is being called
+  //from somewhere else.... (thundercrash) but where?
+  
+ //this is most definetly not the ideal way to do this, but for now....
+  paramsWin = new puDialogBox(0, 0);
+  {//this is weird syntax
+    //this is the background
+    puFrame *box;
+    box = new puFrame(25,50,250,350);
+    box->setColour(PUCOL_BACKGROUND, 1,1,1, 1);
+    box->setStyle(PUSTYLE_BOXED);
+    box->setBorderThickness(1);
+
+    //loop over the params of the function
+    //hardcoded for now 
+    vector<pairBuff10>::const_iterator it = loadedFunctions[num].params.begin();
+    
+    //loop over the params vector, creating fun widgets as we go
+    int y=300; 
+    int x=100;
+    while(it!=loadedFunctions[num].params.end()){
+      //if it's an int make a box for it
+      if((string)it->second == (string)"int"){
+	puInput *tmp = new puInput ( x, y, x+50,y+20 ) ;
+	tmp->setBorderThickness(1);
+	tmp->setLabelPlace(PUPLACE_CENTERED_LEFT);
+	tmp->setLabel(it->first);
+	paramsWinObjects.push_back(tmp); //push these onto the vector so we can grab their values later
+	y-=30;
+      }     
+      //if it's a boolean make a checkbox
+      else if((string)it->second == (string)"bool"){
+	puButton *tmp = new puButton(x, y, x+10, y+10, PUBUTTON_XCHECK);
+	tmp->setLabelPlace(PUPLACE_CENTERED_LEFT);
+	tmp->setLabel(it->first);
+	paramsWinObjects.push_back(tmp); //push these onto the vector so we can grab their values later
+	y-=30;
+      }
+      //add enum stuff here
+      it++;
+    }
+    y-=30;
+    puOneShot *ok = new puOneShot(x,y,"OK");
+    ok->setBorderThickness(2);    
+    puOneShot *cancel = new puOneShot(x+45, y, "Cancel");
+    cancel->setBorderThickness(2);
+    cancel->setCallback(paramsWinCancelCB);
+  }
+  paramsWin->close();
+  paramsWin->reveal();  
+}
+
+//FILE MENU -- EXIT CALLBACK
 void exitCB(puObject*){ //work on this later, we need to pass all of this shyte
+  //delete all of this memory
+  puDeleteObject(mainMenu);
+
   glutDestroyWindow(mainWin);
   exit(0);
 }
@@ -95,7 +179,7 @@ int main ( int argc, char **argv )
   glutKeyboardFunc(keyb);
   
   puInit();
-
+  puDisplay();
   //ok let's try this shit
   //menus must be declared backwards and we get seg faults if we don't make the char of a specified array length
 
@@ -119,8 +203,8 @@ int main ( int argc, char **argv )
   }
   puCallback functSubmenuCB [loadedFunctions.size()];
   i=0;
-  while(i<loadedFunctions.size())
-    functSubmenuCB[i++] = NULL;
+  while(i<(const int)loadedFunctions.size())
+    functSubmenuCB[i++] = cbs[i]; //WHAT GOES HERE???
   //end the a-going-down-ness
 
   mainMenu = new puMenuBar ( -1 );
