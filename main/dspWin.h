@@ -5,6 +5,10 @@
 #include "pnmfile.h"
 #endif
 
+#include <unistd.h>
+#include <sys/wait.h>
+#include <iostream>
+
 /*
   This header holds the struct that will probably be put into a vector
   of all currently loaded images.  A dspWin is the structure of:
@@ -25,6 +29,11 @@
 
 */
 
+/*Modified on 3-6 - added ability to call functions on structs by
+  saving B, forking into call on saved B, reloading into B, and
+  deleting the tmp location of B */
+
+
 //This is the struct for holding the parts of the image process
 //We need to de-templatize image class from image.h
 struct dspWin {
@@ -34,14 +43,19 @@ struct dspWin {
   int winNum;
 };
 
+
+
 //prototypes
 void get_C_ready (dspWin *target);
 dspWin* initDspWin(char *filePath);
 void saveDspWin(dspWin *src, char *filePath);
 void deleteDspWin(dspWin *target);
+void callFunct(dspWin *target, int i, char **par);
+void load2B(dspWin *target, char *filePath);
 
 
-//initialize dspWin with Path
+
+//initialize dspWin from disk
 dspWin* initDspWin(char *filePath) {
   dspWin *tmp = new dspWin;
   
@@ -51,31 +65,26 @@ dspWin* initDspWin(char *filePath) {
 
   /*For now (3/5/05), this is just going to assume the image is a PPM*/
 
-
   //A is an image loaded from filePath
-  //this constructor doesn't exist either - damn!
   tmp->A = loadPPM(filePath);
 
   //tmp B is initially a copy of A
-  //But Pedro's image class doesn't have a copy constructor
-  tmp->B = tmp->A->copy();;
+  tmp->B = tmp->A->copy();
 
-  /*
-    C is the image as we'll want it for GL:
-    But, do they need to be in RGB (as I'm doing tonight), or should
-    they be in GRB or whatever? 
-  */
-
+  //prepares C in GL format
   get_C_ready(tmp);
   return tmp;
 }
 
-//SHOULD THE NEXT FUNCTION TAKE A POINTER OR A REFERENCE?
-//function that updates C
+//function that moves data in B to GL format in C
 void get_C_ready (dspWin *target) {
   int width = target->B->width();
   int height = target->B->height();
   int count = 0;  //counter for loop
+
+  //in case C is already initialized, delete it's value
+  delete[] target->C;
+
   //for RGB, it is three bigger
   target->C = new unsigned char[width*height*3];
 
@@ -97,11 +106,77 @@ void saveDspWin(dspWin *src, char *filePath) {
   src->A = src->B->copy();
 }
 
+//function that saves B as tmp
+void saveTMP(dspWin *src) {
+  savePPM(src->B, "/tmp/tmp.fuk");
+  return;
+}
+
 /*Function that deletes a dspWin */
 void deleteDspWin(dspWin *target) {
   delete target->A;
   delete target->B;
   delete [] target->C;
+}
+
+/*Calls function on B*/
+//file is stored at ./tmp.fuck (in) and tmp2.fuk (out)
+//these are imbedded in params
+void callFunct(dspWin *target, int i, char **par){
+  //save temporary copy
+  saveTMP(target);
+    
+  //forking
+  int pid;
+  int died, status, numArg; //status is set by the call to exec
+
+  switch(pid=fork()){
+  case -1: //error
+    exit(-1);
+  case 0: //0 means a child process
+    //test - REMOVE THIS
+    //execv("/home/vegan/seg", par);
+    execv(loadedFunctions[i].path, par);
+  default:
+    died = wait(&status);
+  }
+  //end fork
+
+  //load file to B
+  load2B(target, "/tmp/tmp2.fuk");
+
+  //delete tmp files - not working
+  //FORK
+  char* temp[4];
+  temp[0] = "rm";
+  temp[1] = "/tmp/tmp.fuk";
+  temp[2] = "/tmp/tmp2.fuk";
+  temp[3] = '\0';
+
+  switch(pid=fork()){
+  case -1: //error
+    cout << "cannot fork\n";
+    exit(-1);
+  case 0: //0 means a child process
+    cout << "forking... \n" << "pid: " << pid << endl;
+    execv("/bin/rm", temp);
+  default:
+    cout << "i'm the parent\n"<<  "pid: " << pid << endl;;
+    wait(&status);
+    cout << "completed ok \n";
+  }
+  //END FORK
+
+  //load current contents of B into C
+  get_C_ready(target);
+  return;
+}
+
+//Function that loads file into B
+void load2B(dspWin *target, char *filePath) {
+  delete target->B;
+  target->B = loadPPM(filePath);
+  return;
 }
 
 #endif
