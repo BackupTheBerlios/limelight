@@ -112,7 +112,8 @@ static image *loadPGM(const char *name) {
 
   /* read data */
   image *im = new image(width, height, false);
-  file.read((char *)imPtr(im, 0, 0), width * height * sizeof(uchar));
+  //file.read((char *)imPtr(im, 0, 0), width * height * sizeof(uchar));
+  file.read((char *)im->data, width * height * sizeof(uchar));
   return im;
 }
 
@@ -122,7 +123,8 @@ static void savePGM(image *im, const char *name) {
   std::ofstream file(name, std::ios::out | std::ios::binary);
 
   file << "P5\n" << width << " " << height << "\n" << UCHAR_MAX << "\n";
-  file.write((char *)imPtr(im, 0, 0), width * height * sizeof(uchar));
+  //file.write((char *)imPtr(im, 0, 0), width * height * sizeof(uchar));
+  file.write((char *)im->data, width * height * sizeof(uchar));
 }
 
 static image *loadPPM(const char *name) {
@@ -145,7 +147,8 @@ static image *loadPPM(const char *name) {
 
   /* read data */
   image *im = new image(width, height, true);
-  file.read((char *)imPtr(im, 0, 0), width * height * 3 * sizeof(uchar) + (2*sizeof(uchar)));
+  //file.read((char *)imPtr(im, 0, 0), width * height * 3 * sizeof(uchar) + (2*sizeof(uchar)));
+  file.read((char *)im->data, width * height * 3 * sizeof(uchar) + (2*sizeof(uchar)));
 
   return im;
 }
@@ -156,7 +159,8 @@ static void savePPM(image *im, const char *name) {
   std::ofstream file(name, std::ios::out | std::ios::binary);
 
   file << "P6\n" << width << " " << height << "\n" << UCHAR_MAX << "\n";
-  file.write((char *)imPtr(im, 0, 0), width * height * 3 * sizeof(uchar) + (2*sizeof(uchar)));
+  //file.write((char *)imPtr(im, 0, 0), width * height * 3 * sizeof(uchar) + (2*sizeof(uchar)));
+  file.write((char *)im->data, width * height * 3 * sizeof(uchar) + (2*sizeof(uchar)));
 }
 
 void load_image(image **im, const char *name) {
@@ -182,7 +186,7 @@ void load_image(image **im, const char *name) {
 
   /* read data */
   *im = new image(width, height, num);
-  file.read((char *)imPtr((*im), 0, 0), width * height * sizeof(uchar));
+  //file.read((char *)*im.data, width * height * sizeof(uchar));
 }
 
 void save_image(image *im, const char *name) {
