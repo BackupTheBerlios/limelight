@@ -39,31 +39,46 @@ vector<function> loadedFunctions; //this is read in from the funct.fuk file UGLI
 
 //This is the struct for holding the parts of the image process
 //We need to de-templatize image class from image.h
+template <typename T>
 struct dspWin {
   char *path;
-  image<rgb>* A;  //in image
-  image<rgb>* B;  //out image
+  image<T>* A;  //in image
+  image<T>* B;  //out image
   unsigned char *C;  //in image in gl form
   unsigned char *D;  //out image in gl form
   bool isRGB;  //true if RGB, false if greyscale
+  int winNum;  
 };
 
 //prototypes
-void get_C_readyPPM (dspWin *target);
-void get_D_readyPPM (dspWin *target);
-dspWin* initDspWin(char *filePath);
-void deleteDspWin(dspWin *target);
-void callFunct(dspWin *target, int i, char **par);
-void load2B(dspWin *target, char *filePath);
-void revert2A(dspWin *target);
-void saveDspWin(dspWin *src);
-void saveDspWin(dspWin *src, char *filePath);
-void 
+template <typename T>
+dspWin<T> *initDspWin(char *filePath);
+template <typename T>
+void get_C_ready (dspWin<T> *target);
+template <typename T>
+void get_D_ready (dspWin<T> *target);
+template <typename T>
+void saveDspWin(dspWin<T> *src, char *filePath);
+template <typename T>
+void saveDspWin(dspWin<T> *src);
+template <typename T>
+void saveTMP(dspWin<T> *src);
+template <typename T>
+void deleteDspWin(dspWin<T> *target);
+template <typename T>
+void callFunct(dspWin<T> *target, int i, char **par);
+template <typename T>
+void load2B(dspWin<T> *target, char *filePath);
+template <typename T>
+void revert2A(dspWin<T> *target);
+
+
+
 
 //initialize dspWin from disk
-dspWin* initDspWin(char *filePath) {
-  
-  dspWin *tmp = new dspWin;
+template <typename T>
+dspWin<T> *initDspWin(char *filePath) {
+  dspWin<T> *tmp = new dspWin<T>;
   tmp->path = new char[50];
 
   for (int i = 0; filePath[i]!='\0'; i++)
@@ -99,15 +114,16 @@ dspWin* initDspWin(char *filePath) {
 
   //prepares C in GL format
   
-  get_C_readyPPM(tmp);
-  get_D_readyPPM(tmp);
+  get_C_ready(tmp);
+  get_D_ready(tmp);
   return tmp;
 }
 
 
 
 //function that moves data in B to GL format in C
-void get_C_ready (dspWin *target) {
+template <typename T>
+void get_C_ready (dspWin<T> *target) {
   int width = target->B->width();
   int height = target->B->height();
   int count = 0;  //counter for loop
@@ -142,7 +158,8 @@ void get_C_ready (dspWin *target) {
 }
 
 //function that moves data in B to GL format in C
-void get_D_ready (dspWin *target) {
+template <typename T>
+void get_D_ready (dspWin<T> *target) {
   int width = target->A->width();
   int height = target->A->height();
   int count = 0;  //counter for loop
@@ -174,11 +191,12 @@ void get_D_ready (dspWin *target) {
     }  
   }
 }
-}
+
 
 //function that saves B, and loads B into A
 //WHAT IS PEDRO'S VLIB THING IN save_image (in pnmfile.h)?
-void saveDspWin(dspWin *src, char *filePath) {
+template <typename T>
+void saveDspWin(dspWin<T> *src, char *filePath) {
   if (src->isRGB)
     savePPM(src->B, filePath);
   else
@@ -188,7 +206,8 @@ void saveDspWin(dspWin *src, char *filePath) {
 }
 
 //function that saves B to same location as A, then loads image
-void saveDspWin(dspWin *src) {
+template <typename T>
+void saveDspWin(dspWin<T> *src) {
   if (src->isRGB)
     savePPM(src->B, src->path);
   else
@@ -198,7 +217,8 @@ void saveDspWin(dspWin *src) {
 }
 
 //function that saves B as tmp
-void saveTMP(dspWin *src) {
+template <typename T>
+void saveTMP(dspWin<T> *src) {
   if (src->isRGB)
     savePPM(src->B, "/tmp/tmp.fuk");
   else
@@ -207,7 +227,8 @@ void saveTMP(dspWin *src) {
 }
 
 /*Function that deletes a dspWin */
-void deleteDspWin(dspWin *target) {
+template <typename T>
+void deleteDspWin(dspWin<T> *target) {
   delete target->A;
   delete target->B;
   delete [] target->C;
@@ -217,7 +238,8 @@ void deleteDspWin(dspWin *target) {
 /*Calls function on B*/
 //file is stored at ./tmp.fuk (in) and tmp2.fuk (out)
 //these are imbedded in params
-void callFunct(dspWin *target, int i, char **par){
+template <typename T>
+void callFunct(dspWin<T> *target, int i, char **par){
   //save temporary copy
   saveTMP(target);
     
@@ -268,7 +290,8 @@ void callFunct(dspWin *target, int i, char **par){
 }
 
 //Function that loads file into B
-void load2B(dspWin *target, char *filePath) {
+template <typename T>
+void load2B(dspWin<T> *target, char *filePath) {
   delete target->B;
   if (target->isRGB)
     target->B = loadPPM(filePath);
@@ -280,7 +303,8 @@ void load2B(dspWin *target, char *filePath) {
 /*Function that changes B and C back into copy
   gotten from A */
 
-void revert2A(dspWin *target) {
+template <typename T>
+void revert2A(dspWin<T> *target) {
   delete target->B;
   delete[] target->C;
   target->B = target->A->copy();
