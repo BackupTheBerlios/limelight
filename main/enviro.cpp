@@ -80,7 +80,7 @@ void keyb(unsigned char key, int x, int y){
 }
 
 //file menu -- revertCB
-void revertCB(puObject*){
+void revertCB(){
   revert2A(imgsOnScr[curImg]);
   glutSetWindow(imgsOnScr[curImg]->winNum);
   glNewList(curImg+1, GL_COMPILE);
@@ -94,6 +94,7 @@ void revertCB(puObject*){
   
   cout << glutGetWindow() << "should be : " << imgsOnScr[curImg]->winNum << endl; 
   glutPostRedisplay();
+}
 
 //FILE MENU -- OPEN DIALOG BOX CALLBACK
 void openFileCB(puObject*){
@@ -206,9 +207,14 @@ void paramsWinOKCB(puObject*){
 
 //FUNCTION MENU -- CALLBACK
 void createParamsWin(int num){
-  //this is lame, but we cannot pass anything in here, so we need to gather what function is being called
-  //from somewhere else.... (thundercrash) but where?
 
+  //check to see if revert was called
+  if(num==9999){
+    revertCB();
+    return;
+  }
+
+  //otherwise do normal thing
   curFunction = num;
   
  //this is most definetly not the ideal way to do this, but for now....
@@ -270,6 +276,11 @@ void exitCB(puObject*){ //work on this later, we need to pass all of this shyte
   exit(0);
 }
 
+//FILE MENU -- SAVE CALLBACK
+void saveCB(puObject*){
+  saveDspWin(imgsOnScr[curImg], imgsOnScr[curImg]->path);
+}
+
 int main ( int argc, char **argv )
 {
   glutInitWindowSize ( 750, 550 ) ;
@@ -290,7 +301,7 @@ int main ( int argc, char **argv )
   file_submenu[2] = "Open";
   file_submenu[1] = "Save";
   file_submenu[0] = "Exit";
-  puCallback file_submenu_cb [3] = { exitCB, NULL, openCB};
+  puCallback file_submenu_cb [3] = { exitCB, saveCB, openCB};
 
   //read in functions and make a glut style menu
   createMenu("funct.fuk", loadedFunctions); //load 'er up
@@ -302,6 +313,8 @@ int main ( int argc, char **argv )
     glutAddMenuEntry((char*)it->name, i++);
     it++;
   }
+  
+  glutAddMenuEntry("Revert", 9999); //this is hardcoded
 
   glutAttachMenu(GLUT_RIGHT_BUTTON);
   //end menu creation

@@ -38,6 +38,7 @@ vector<function> loadedFunctions; //this is read in from the funct.fuk file UGLI
 //This is the struct for holding the parts of the image process
 //We need to de-templatize image class from image.h
 struct dspWin {
+  char *path;
   image<rgb>* A;
   image<rgb>* B;
   unsigned char *C;
@@ -57,7 +58,7 @@ void revert2A(dspWin *target);
 dspWin* initDspWin(char *filePath) {
   
   dspWin *tmp = new dspWin;
-  
+  tmp->path = filePath;
   /*this won't work unless we change Pedro's  pnmfile.h
     so that it will read any image without caring if they are pgm, ppm, etc.
     ASK HIM ABOUT IT */
@@ -102,6 +103,7 @@ void get_C_ready (dspWin *target) {
 //WHAT IS PEDRO'S VLIB THING IN save_image (in pnmfile.h)?
 void saveDspWin(dspWin *src, char *filePath) {
   savePPM(src->B, filePath);
+  cout <<"file saved succesfully\n";
   delete src->A;
   src->A = src->B->copy();
 }
