@@ -127,7 +127,6 @@ static void savePGM(image *im, const char *name) {
 }
 
 static image *loadPPM(const char *name) {
-  char buf[BUF_SIZE], doc[BUF_SIZE];
   
   /* read header */
   std::ifstream file(name, std::ios::in | std::ios::binary);
