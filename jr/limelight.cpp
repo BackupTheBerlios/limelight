@@ -100,6 +100,9 @@ int curFunction; //set this when a function menu item is called
 dspWin* loadedImg; //this is the loaded image woohoo!
 int mainWinWidth, mainWinHeight; //these aren't used right now, but they should eventually be used to increase the size if the params are very large
 int winA, winB; //these will be the image windows, ROCK AND ROLL
+//stuff for zoom
+int mouseOn = 0;
+int posWidth, posHeight;
 
 //pui globals
 puFileSelector *addFuncPath;
@@ -138,10 +141,56 @@ void mousefn ( int button, int updown, int x, int y ){
   glutPostRedisplay () ;
 }
 
+void motionfnWinA (/* int button, int updown, */int x, int y ){
+  if(mouseOn == 1){
+    
+    int offsetX, offsetY;
+    offsetX = (-posWidth-x);
+    offsetY = (-posHeight-y);
+    if(offsetX < 0) offsetX = -offsetX;
+    if(offsetY < 0) offsetY = -offsetY;
+    //if(offsetX > loadedImg->A->width()/2) offsetX = loadedImg->A->width()/2;
+    //if(offsetY > loadedImg->A->height()/2) offsetY = loadedImg->A->height()/2;
+
+    cout << "offset y: " << (posHeight-y) << " offset x: " << (posWidth-x) << endl;
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelStorei(GL_UNPACK_SKIP_ROWS, offsetY);
+    glPixelStorei(GL_UNPACK_SKIP_PIXELS, offsetX);
+    glRasterPos2i(-1,-1 );
+    glPixelZoom(2.0,2.0);
+    glDrawPixels(loadedImg->A->width(),
+		 loadedImg->A->height(),
+		 GL_RGB,
+		 GL_UNSIGNED_BYTE,
+		 loadedImg->D);
+    glutPostRedisplay();
+    glutSwapBuffers();
+  }
+  else{
+    glutPostRedisplay();
+    glutSwapBuffers();
+  }
+}
+
+void mousefnWinA ( int button, int updown, int x, int y ){
+  if(updown == GLUT_DOWN){
+    if(mouseOn == 1)
+      return;
+    else{
+      cout << "setting posWidth " << x << " posHeight " << y << endl;
+      mouseOn = 1;
+      posWidth = x/2;
+      posHeight = y/2;
+    }
+  }
+  else if (updown == GLUT_UP) 
+    mouseOn = 0;
+}
+
 void dispfnWinA(){ 
   glClearColor( 0.9, 1.0, 0.9, 1.0 );
   glClear(GL_COLOR_BUFFER_BIT);
-  
+  glPixelZoom(2.0,2.0);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glRasterPos2i(-1,-1 );
   glDrawPixels(loadedImg->A->width(),
@@ -242,6 +291,9 @@ void openFile(char* fileName){
   string nameA = "Original: ";
   nameA += fileName;
   winA = glutCreateWindow(nameA.c_str());
+  //for zoom stuff
+  glutMotionFunc(motionfnWinA);
+  glutMouseFunc(mousefnWinA);
   glutDisplayFunc(dispfnWinA);
   glutKeyboardFunc(keyb);
 
