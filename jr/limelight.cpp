@@ -160,15 +160,23 @@ void mousefn(int button, int updown, int x, int y){
 }
 
 void motionfnWinA(int x, int y ){
- //for the zoom
-  /*ZOOM RESETS TO 0 SOMETIMES ON THE SECOND GO AROUND*/
+ //for the zoom 
   if(zoom==1){
-    zoomOffSetY = (double)(posHeight-y) / 10; //so for every 10 pixels we go in a tenth of a zoom level
-    zoomAmount = zoomOffSetY + 1.0;
- 
+    //we moved up a pixel so zoom in
+    if((double)(posHeight-y) > 0){
+      posHeight = y;
+      zoomAmount += .1;
+    }
+    //we moved down a pixel so zoom out
+    if((double)(posHeight-y)< 0){
+      posHeight = y;
+      zoomAmount -= .1;
+    }
+    
+    //don't zoom too much, or out too far
     if(zoomAmount < 1.0) zoomAmount = 1.0;
     if(zoomAmount > 10.0) zoomAmount = 10.0;
-    cout << "za: " <<zoomAmount << endl;
+  
     glPixelZoom(zoomAmount,zoomAmount);
     glutPostRedisplay();
     glutSwapBuffers();
@@ -177,11 +185,13 @@ void motionfnWinA(int x, int y ){
   
   else if (zoomAmount == 1.0) return; //we cannot pan if zoom is 1
   
+  //for the pan 
   else{
     /*REMEMBER TO TEST PAN ON LENA AND STOP (AND WITH LITTLE ZOOM AMOUNTS AND BIG ONES)*/
-    //for the pan 
-    newOffX=(posWidth-x)/zoomAmount; //5 is a 'slowing down' factor
-    newOffY=(posHeight-y)/zoomAmount;//add the slow down factor in later when this works
+    /*AND TEST ON aLena.ppm CUZ SHE FUCKS UP ON MACS */
+   
+    newOffX=(posWidth-x)/zoomAmount; //divide by zoom amount cuz otherewise when you're zoomed in at 10x
+    newOffY=(posHeight-y)/zoomAmount;//it goes crazy
     
     offSetX += newOffX;
     offSetY += newOffY;
@@ -211,8 +221,8 @@ void mousefnWinA(int button, int updown, int x, int y){
   if(glutGetModifiers() == GLUT_ACTIVE_SHIFT){
     glutSetCursor(GLUT_CURSOR_DESTROY);
     if(updown == GLUT_DOWN){
-      if(zoom!=1){
-	zoom = 1;
+      if(zoom!=1){ 
+	zoom = 1; //zoom is for telling if zoom is on or off
 	cout << "start zoom\n";
 	posHeight=y; //later we can make this the same as posHeight, but for now this will be easier
       }
