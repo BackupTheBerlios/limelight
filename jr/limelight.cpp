@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #ifdef __APPLE__
 #include <glut/glut.h>
 #else
-
 #include <GL/glut.h>
 #endif
 
@@ -22,10 +22,9 @@ else
 #include <string>
 #include <map>
 
-//this is changed for BETA - js 3/17?
+//our includes
 #include "functRead.h" 
 #include "dspWin.h" 
-#include "functionFileCreator.h"
 
 /******************the great to do list: ****************
 
@@ -38,6 +37,7 @@ else
  *add a printout from the stdout (this one is a little hard, we need to make it pipe the exec) -- dup2 to a text file so people can look at it later
  *enable tab for inputs and return for buttons (possible?)
  *make pan amount not so slow when zoomAmount < 5
+ *TO DO: we should probably add some check to make sure there are values in the params...
 
 */
 
@@ -88,6 +88,7 @@ int curFunction; //set this when a function menu item is called
 dspWin* loadedImg; //this is the loaded image woohoo!
 int mainWinWidth, mainWinHeight; //these aren't used right now, but they should eventually be used to increase the size if the params are very large
 int winA, winB; //these will be the image windows, ROCK AND ROLL
+//vector<function> loadedFunctions is where all of our functions are stored, it is (sadly) declared in the dspWin.h file
 
 //stuff for zoom and pan
 int mouseOn = 0;
@@ -106,6 +107,7 @@ puDialogBox *popupBox = NULL ;
 puComboBox *funcItems;
 puOneShot *chngFuncBtn;
 //end pui globals (you're dumb pui)
+
 
 #ifndef PARAM_S
 #define PARAM_S
@@ -185,9 +187,6 @@ void motionfnWinA(int x, int y ){
     if(offSetX<0)offSetX=0;
     if(offSetY<0)offSetY=0;
 
-    cout << "zoomAmout: " << zoomAmount << endl;
-    cout << "offsetY: " << offSetY << " " << "offSetX: " << offSetY << endl;
-    cout << "height: " << (double)loadedImg->A->height()/zoomAmount << " width: " << (double)loadedImg->A->width()/zoomAmount << endl;
     glPixelStoref(GL_UNPACK_SKIP_ROWS, offSetY);
     glPixelStoref(GL_UNPACK_SKIP_PIXELS, offSetX);
     glutPostRedisplay();
@@ -232,7 +231,6 @@ void mousefnWinA(int button, int updown, int x, int y){
       mouseOn = 1;
       posWidth = x;
       posHeight = y;
-      cout << "setting posWidth " << x << " posHeight " << y << endl;
       glutSetCursor(GLUT_CURSOR_INFO);
     }
   }
@@ -317,14 +315,11 @@ void keyb(unsigned char key, int x, int y){
 
 //FILE MENU -- OPEN DIALOG BOX CALLBACK
 void openFileCB(puObject*){
-  cout << "button callback called\n";
   char* fileName = new char[80];
   openDialogBox->getValue(&fileName);
-  cout << "get value ok\n";
   
   //check to see if the cancel button was hit (is this string conv neccesary)
   string tmp = fileName;
-  cout << "tmp: " << tmp << endl;
   if(tmp.size() == 0){
     puDeleteObject(openDialogBox);
     return;
@@ -362,15 +357,9 @@ void openFile(char* fileName){
   glutDisplayFunc(dispfnWinB);
   glutKeyboardFunc(keyb);
  
-  cout << "before delete\n";
   if(openDialogBox!=0)
     puDeleteObject(openDialogBox);
-  cout << "after delete\n";
-  //we need to add some kind of if clause for the cancel button
-  //but the cancel button doesn't have it's own callback
-
-  cout << "open the file: " << fileName << endl;
-  //we don't want to delete the filName, cuz the glut windows use it
+  //we don't want to delete the fileName variable, cuz the glut windows use it
 }
 //FILE MENU -- OPEN CALLBACK
 void openCB(puObject*){
@@ -383,8 +372,8 @@ void openCB(puObject*){
 //PARAMS WINDOW -- OK CALLBACK
 void paramsWinOKCB(puObject*){
   //TO DO: we should probably add some check to make sure there are values in the params...
+
   //check to make sure there's an image loaded
-  cout << "is paramsWINCB called?\n";
   if(loadedImg == NULL) return;
 
   //create a list of the param values (in the right order) for the function call
@@ -396,7 +385,6 @@ void paramsWinOKCB(puObject*){
   while(j < paramsWinObjects.size()){
     char *tmp = new char[80]; //PUI only lets an input string be 80 chars long anyway...
     paramsWinObjects[j]->getValue(tmp);
-    cout << "ok: " << tmp << endl;
     params[i++] = tmp;
     j++;
   }
@@ -438,7 +426,7 @@ void createParamsWin(int num){
   //loop over the params of the function  
   vector<pairBuff10>::const_iterator it = loadedFunctions[num].params.begin();
   
-  //loop over the params vector, creating fun widgets as we go
+  //loop over the params vector, creating fun widgets as we go (pui, like communism, is a nice idea, but in practice it can make people's lives hell)
   int y=250; 
   int x=100;
   while(it!=loadedFunctions[num].params.end()){
@@ -577,7 +565,6 @@ void funcReload(puObject*){
   char *tmp = new char[80];
   funcItems->getValue(tmp);
   int num =  funcMap[tmp];
-  cout << "drop down: " << num << endl;
   createParamsWin(num);
 }
 
@@ -594,7 +581,7 @@ int main ( int argc, char **argv ){
   //check to make sure configfile is .lime
   while (argv[1][++i]!='\0');
   if (argv[1][i-1]!='e'||argv[1][i-2]!='m'||argv[1][i-3]!='i'||argv[1][i-4]!='l'){
-    cout << "Configuration file must be .lime file\n";
+    cout << "ERROR: Configuration file must be .lime file\n";
     return 1;
   }
   /*check to make sure that .lime is actually a valid file - DO THIS.  it needs to happen
@@ -606,7 +593,7 @@ int main ( int argc, char **argv ){
     //if file doesn't end in .pgm, .ppm, or .pbm, we can't read it
     while (argv[2][++i]!='\0');
     if (argv[2][i-1]!='m'||(argv[2][i-2]!='g'&&argv[2][i-2]!='p'&&argv[2][i-2]!='b')||argv[2][i-3]!='p'){
-      cout << "The image given is not a valid PNM image\n";
+      cout << "ERROR: The image given is not a valid PNM image\n";
       return 1;
     }
   }
@@ -615,7 +602,7 @@ int main ( int argc, char **argv ){
   //here's some performance improvements (WOW!, that's a LOT quicker)
   //i think that we only need to disable them in main (not for every window)
   //framebuffer ops we don't need
-  /* glDisable(GL_SCISSOR_TEST);
+  glDisable(GL_SCISSOR_TEST);
   glDisable(GL_ALPHA_TEST);
   glDisable(GL_STENCIL_TEST);
   glDisable(GL_DEPTH_TEST);
@@ -626,7 +613,7 @@ int main ( int argc, char **argv ){
   glDisable(GL_TEXTURE_3D);
   glDisable(GL_LIGHTING);
   glDisable(GL_FOG);
-  */
+  
 
   //intialize the limelight function params window
   mainWinHeight = 250;
@@ -687,13 +674,8 @@ int main ( int argc, char **argv ){
 
   //load the first function on the list into the main window
   createParamsWin(0);
-
-  //the program was called with an image, so open it
   
-  if(argc > 2){
-    cout << argv[2] << endl;
-    openFile(argv[2]);
-  }
+  if(argc > 2) openFile(argv[2]);  //the program was called with an image, so open it
 
   glutMainLoop () ;
 

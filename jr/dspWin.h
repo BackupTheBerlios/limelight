@@ -31,10 +31,6 @@ using namespace std;
 
 */
 
-/*Modified on 3-6 - added ability to call functions on structs by
-  saving B, forking into call on saved B, reloading into B, and
-  deleting the tmp location of B */
-
 vector<function> loadedFunctions; //this is read in from the funct.fuk file UGLINESS!!!
 
 //This is the struct for holding the parts of the image process
@@ -76,8 +72,6 @@ dspWin* initDspWin(char *filePath) {
 
   /*check to see if image is ppm or pgm*/
   //5 is raw pgm, 6 is raw ppm, ...
-
-  /* Add more image types later? */
 
   //open file
   ifstream input(filePath, ios::in);
@@ -207,7 +201,6 @@ void getDHelpPGM(dspWin *target) {
   }
   return;
 }
-
 
 
 //function that saves B, and loads B into A
