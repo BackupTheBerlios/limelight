@@ -18,10 +18,9 @@ else
 #include <vector.h>
 #include <string>
 #include <map>
-#include "functRead.h" //what a bad name for this header file
-#include "dspWin.h" // a much better job of naming is going on here
+#include "functRead.h" 
+#include "dspWin.h" 
 #include "functionFileCreator.h"
-
 
 /******************the great to do list: ****************
 
@@ -31,35 +30,61 @@ else
  *make add function stuff work
  *make the open image "cancel" button work -- DONE ts (3/11)
  *'save'/ 'save as' needs to reload B -- DONE ts (3/11)
- *kill the glut menus
+ *kill the glut menus -- DONE ts (3/11)
 
  *other improvements: 
  *'close' menu item -- DONE ts (3/11)
- *add a printout from the stdout
+ *add a printout from the stdout (this one is a little hard, we need to make it pipe the exec)
  *add a function remove feature...
  *rename func.fuk to configure something or other
  *rename enviro to limelight
  *make the code readable
  *enable tab for inputs and return for buttons (possible?)
  *after adding a new function it should tell you to restart the program / if someone's feeling ambitious reload the functions
-
- */
+ *add keyboard shortcuts (cuz that's cool) -- kinda done, except cant get two keys at a time to work or ctrl
+ *itd be cool to add errors and popups / disable menu items for when you cannot do things
+*/
 
 using namespace std;
 
 //prototypes
 void createParamsWin(int num);
 void openFile(char* fileName);
+void mousefn ( int button, int updown, int x, int y );
+void dispfnWinA();
+void dispfnWinB();
+void displayfn();
+void keyb(unsigned char key, int x, int y);
+void openFileCB(puObject*); //this is for the open dialog box callback
+void openFile(char* fileName);
+void openCB(puObject*); //this is for the menu (open dialog box)
+void paramsWinOKCB(puObject*);
+void createParamsWin(int num);
+//crapfunctions
+void addFuncCB(puObject*);
+void addFuncPathCB(puObject*);
+void addFuncNameCB(puObject*);
+void addFuncFinalCB(puObject*);
+//end crap functions
+void exitCB(puObject*);
+void closeCB(puObject*);
+void saveCB(puObject*);
+void saveFileAsCB(puObject*);
+//pop up
+void go_away_callback(puObject *);
+void make_dialog(const char *txt);
+//end pop up
+void helpCB(puObject*);
+void aboutCB(puObject*);
+void saveAsCB(puObject*);
+void funcReload(puObject*);
 
 //globals
-
-struct ltstr{
+struct ltstr{ //used for the funcMap
   bool operator()(const char* s1, const char* s2) const{
     return strcmp(s1, s2) < 0;
   }
 };
-
-
 
 map<const char *, int, ltstr> funcMap; // this is here for the drop down menu, cuz it only return char* (never again pui, never again)
 puMenuBar *mainMenu;
@@ -88,7 +113,7 @@ puOneShot *ok;
 puDialogBox *popupBox = NULL ;
 puComboBox *funcItems;
 puOneShot *funcOk;
-//end pui globas (you're dumb pui)
+//end pui globals (you're dumb pui)
 
 #ifndef PARAM_S
 #define PARAM_S
@@ -154,6 +179,31 @@ void displayfn(){
 void keyb(unsigned char key, int x, int y){
   puKeyboard(key, PU_DOWN); //so we need this on our keyboard thing to have that work....
   glutPostRedisplay();
+ 
+  //keyboard shortcuts
+  int KEYCONST = 4; //this means alt key, ctrl is 2, but for some reason it doesnt work...
+  
+  if(key=='q'){ //quit
+    if(glutGetModifiers()==KEYCONST)
+      exitCB(mainMenu);//does it matter what we pass it? / will this affect performance? we could just make a null puObject
+  }
+
+ if(key=='w'){ //close
+    if(glutGetModifiers()==KEYCONST)
+      closeCB(mainMenu);
+  }
+
+  if(key=='o'){ //open
+    if(glutGetModifiers()==KEYCONST)
+      openCB(mainMenu);
+  }
+  
+  if(key=='s'){ //save & save as
+    if(glutGetModifiers()==KEYCONST)
+      saveCB(mainMenu);
+    else if(glutGetModifiers()==(GLUT_ACTIVE_ALT|GLUT_ACTIVE_SHIFT)) //for some reason this also doesnt work
+      saveAsCB(mainMenu);
+  }
 }
 
 //FILE MENU -- OPEN DIALOG BOX CALLBACK
@@ -188,11 +238,13 @@ void openFile(char* fileName){
 
   winA = glutCreateWindow(fileName);
   glutDisplayFunc(dispfnWinA);
+  glutKeyboardFunc(keyb);
 
   glutInitWindowSize(loadedImg->A->height(), loadedImg->A->width());
   winB = glutCreateWindow(fileName);
   glutDisplayFunc(dispfnWinB);
-   
+  glutKeyboardFunc(keyb);
+
   puDeleteObject(openDialogBox);
   
   //we need to add some kind of if clause for the cancel button
@@ -417,20 +469,31 @@ void closeCB(puObject*){
     glutDestroyWindow(winA);
     glutDestroyWindow(winB); 
     deleteDspWin(loadedImg);
+    loadedImg = NULL;
   }
 }
 
 //FILE MENU -- SAVE CALLBACK
 void saveCB(puObject*){
+  if(loadedImg != NULL){
   saveDspWin(loadedImg);//this saves the image
   get_C_ready(loadedImg);//nice job josh, this is fuckin beautiful
   get_D_ready(loadedImg);
+  }
 }
 
 //FILE MENU -- SAVE FILE AS CALLBACK
 void saveFileAsCB(puObject*){
   char *tmp = new char[200];
   openDialogBox->getValue(tmp);    
+  
+  //check to see if the cancel button was hit (is this string conv neccesary?)
+  string fileName = tmp;
+  if(fileName.size() == 0){
+    puDeleteObject(openDialogBox);
+    return;
+  }
+
   saveDspWin(loadedImg, tmp);
   delete[] tmp;
   //so here, we should actually reload the entire img, so as to rename the win names, etc.
@@ -440,13 +503,13 @@ void saveFileAsCB(puObject*){
 }
 
 //stuff for making a pop-up
-void go_away_callback ( puObject * ){
+void go_away_callback(puObject *){
   delete popupBox ;
   popupBox = NULL ;
 }
 
-void make_dialog ( const char *txt ){
-  if ( popupBox != NULL )
+void make_dialog(const char *txt){
+  if(popupBox != NULL)
     return ;
   
   popupBox = new puDialogBox(25, 100);
@@ -477,10 +540,12 @@ void aboutCB(puObject*){
 
 //FILE MENU -- SAVE AS CALLBACK
 void saveAsCB(puObject*){
-  openDialogBox = new puFileSelector(0, 0, 252, 324, "", "Please print to where you want to save");
-  openDialogBox->setInitialValue(""); //make this pretty later
-  openDialogBox->setChildBorderThickness(PUCLASS_INPUT, 1);
-  openDialogBox->setCallback(saveFileAsCB);
+  if(loadedImg != NULL){
+    openDialogBox = new puFileSelector(0, 0, 252, 324, "", "Please print to where you want to save");
+    openDialogBox->setInitialValue(""); //make this pretty later
+    openDialogBox->setChildBorderThickness(PUCLASS_INPUT, 1);
+    openDialogBox->setCallback(saveFileAsCB);
+  }
 }
 
 //FUNC RELOAD CALLBACK
@@ -540,7 +605,7 @@ int main ( int argc, char **argv ){
   puCallback help_submenu_cb [4] = {helpCB, NULL, aboutCB, NULL};
 
   //file menu 
-  char *file_submenu[10] = {"Exit", "-----", "Save as", "Save", "-----", "Add new function", "-----","Close", "Open", NULL};
+  char *file_submenu[10] = {"Exit           Alt+Q", "--------------------", "Save as   Alt+Shft+S", "Save           Alt+S", "--------------------", "Add new function", "--------------------","Close          Alt+W", "Open           Alt+O", NULL};
   puCallback file_submenu_cb [10] = { exitCB, NULL, saveAsCB, saveCB, NULL, addFuncCB, NULL, closeCB, openCB, NULL};
   
   //make the main menu
