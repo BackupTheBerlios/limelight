@@ -136,7 +136,7 @@ double zoomOffSetYB = 0.0;
 
 //pui globals
 puOneShot *ok;
-puDialogBox *popupBox = NULL ;
+puDialogBox *popupBox=NULL;
 puComboBox *funcItems;
 puOneShot *chngFuncBtn;
 
@@ -624,8 +624,9 @@ void chngFuncCB(puObject*){
 
 //popup ok callback -- removes a popup (dialog box) from the screen
 void hidePopupCB(puObject *){
-  delete popupBox ;
-  popupBox = NULL ;
+  puDeleteObject(popupBox);
+  //delete popupBox;
+  popupBox = NULL;
 }
 
 /* ************************** FUNCTIONS *************************** */
@@ -711,8 +712,8 @@ void makePopup(const char *txt){
     ok->makeReturnDefault(TRUE);
     ok->setCallback(hidePopupCB);
   }
-  popupBox -> close  () ;
-  popupBox -> reveal () ;
+  popupBox->close();
+  popupBox->reveal();
 }
 
 //open a file
