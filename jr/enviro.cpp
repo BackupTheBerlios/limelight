@@ -313,9 +313,11 @@ void addFuncFinalCB(puObject*){
     parameter tmp;
     char *tmp1 = new char[80];
     addFuncParams[j++]->getValue(tmp1);
+    cout << "param name: " << tmp1 << endl;
     tmp.name = tmp1;
 
     addFuncParams[j++]->getValue(tmp1);
+    cout << "param type: " << tmp1 << endl;
     tmp.type = tmp1;
     addFuncParamsValues.push_back(tmp);
     j++;

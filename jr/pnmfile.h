@@ -157,7 +157,7 @@ static void savePPM(image *im, const char *name) {
   std::ofstream file(name, std::ios::out | std::ios::binary);
 
   file << "P6\n" << width << " " << height << "\n" << UCHAR_MAX << "\n";
-  file.write((char *)imPtr(im, 0, 0), width * height * 3 * sizeof(uchar) + (2*sizeof(uchar))));
+  file.write((char *)imPtr(im, 0, 0), width * height * 3 * sizeof(uchar) + (2*sizeof(uchar)));
 }
 
 void load_image(image **im, const char *name) {

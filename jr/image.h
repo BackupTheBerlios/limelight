@@ -53,7 +53,7 @@ image::image(const int width, const int height, const bool colored) {
   for (int i = 0; i < h; i++){
     access[i] = new unsigned char[w*pixelCount];
     for (int j = 0; j<width*pixelCount; j++)
-      j=&i[(i*w)+(j*pixelCount)];
+      access[i][j]=data[(i*w)+(j*pixelCount)];
   }
 }
 
