@@ -198,12 +198,12 @@ void motionfnWinA(int x, int y ){
     /*AND TEST ON aLena.ppm CUZ SHE FUCKS UP ON MACS */
    
     //height -- move up move image cutoff up / reverse for down
-    if((double)(posHeight-y) > 0) offSetY += .5;
-    if((double)(posHeight-y) < 0) offSetY -= .5;
+    if((double)(posHeight-y) > 0) offSetY += 1*zoomAmount;
+    if((double)(posHeight-y) < 0) offSetY -= 1*zoomAmount;
 
     //width -- move left move image cutoff left / reverse for right
-    if((double)(posWidth-x) > 0) offSetX += .5;
-    if((double)(posWidth-x) < 0) offSetX -= .5;
+    if((double)(posWidth-x) > 0) offSetX -= 1*zoomAmount;
+    if((double)(posWidth-x) < 0) offSetX += 1*zoomAmount;
 
     //reset current width and height for next round
     posHeight = y;
