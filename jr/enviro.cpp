@@ -15,8 +15,10 @@ else
 #include <vector>
 #include "functRead.h" //what a bad name for this header file
 #include "dspWin.h" // a much better job of naming is going on here
+#include "functionFileCreator.h"
 
 
+//327 lines before all features added
 using namespace std;
 
 /********************* prototypes */
@@ -31,7 +33,7 @@ puFileSelector *openDialogBox;
 int mainWin;
 vector<puObject*> paramsWinObjects; 
 puDialogBox *paramsWin; //this is an ugly hack for now
-vector<dspWin*> imgsOnScr; //this is the images currently on the screen
+vector< dspWin* > imgsOnScr; //this is the images currently on the screen
 int curImg; 
 //at the moment we're not using win 1, which is the main window
 int w2; // tsk, tsk, so messy, we'll take care of this soon
@@ -40,23 +42,75 @@ int *glImgLists; //this is for the gl list call back, do this later in a better 
 
 /********/
 
-void motionfn ( int x, int y )
-{
+/*************************** hey hey, new shit for JR goes down here *****************/
+dspWin* loadedImg; //this is the loaded image woohoo!
+int mainWinWidth, mainWinHeight; //used for checking size of window vs. loaded img
+int winA, winB; //these will be the image windows, ROCK AND ROLL
+int winAHeight, winAWidth; //yes
+
+/*********************** pui globals (globally defined gui elements are not my friend *****/
+puFileSelector *addFuncPath;
+puInput *addFuncName, *addFuncParamsNum;
+vector<puObject*> addFuncParams; //the entires will be name, then type, ok cool 
+char *addFuncPathValue = new char[80]; 
+char *addFuncNameValue = new char[80]; 
+int *addFuncParamNumValue = new int;
+void addFuncCB(puObject*);
+void addFuncPathCB(puObject*);
+void addFuncNameCB(puObject*);
+void addFuncFinalCB(puObject*);
+
+puOneShot *ok;
+/************end pui shit ******* fuck you pui*/
+#ifndef PARAM_S
+#define PARAM_S
+struct parameter {
+  string name;
+  string type;
+};
+#endif
+
+list<parameter> addFuncParamsValues; //the entires will be name, then type, ok not cool, pui is lame
+
+void motionfn ( int x, int y ){
   puMouse ( x, y ) ;
   glutPostRedisplay () ;
 }
 
-void enterLeaveWin(int status){
-  if(status==GLUT_VISIBLE){ //means mouse is on the win 
-    curImg = glutGetWindow() - 2; //-2 cuz windows start at 1 and 1 is main win
-    cout << "curImg is now: " << curImg << endl;
-    cout << "winID: " << imgsOnScr[curImg]->winNum << endl;
-  }
+void mousefn ( int button, int updown, int x, int y ){
+  puMouse ( button, updown, x, y ) ;
+  glutPostRedisplay () ;
 }
 
-void mousefn ( int button, int updown, int x, int y )
-{
-  puMouse ( button, updown, x, y ) ;
+void dispfnWinA(){
+  glutSetWindow(winA);
+  
+  glClearColor ( 0.9, 1.0, 0.9, 1.0 ) ;
+  glClear ( GL_COLOR_BUFFER_BIT ) ;
+  
+  glRasterPos2i(-1,-1 );
+  glDrawPixels(loadedImg->A->width(), 
+	       loadedImg->A->height(),
+	       GL_RGB,
+	       GL_UNSIGNED_BYTE,
+	       loadedImg->D);
+  glutSwapBuffers () ;
+  glutPostRedisplay () ;
+}
+
+void dispfnWinB(){
+  glutSetWindow(winB);
+
+  glClearColor ( 0.9, 1.0, 0.9, 1.0 ) ;
+  glClear ( GL_COLOR_BUFFER_BIT ) ;
+  
+  glRasterPos2i(-1,-1 );
+  glDrawPixels(loadedImg->A->width(), 
+	       loadedImg->A->height(),
+	       GL_RGB,
+	       GL_UNSIGNED_BYTE,
+	       loadedImg->C);
+  glutSwapBuffers () ;
   glutPostRedisplay () ;
 }
 
@@ -65,37 +119,7 @@ void displayfn (){
   glClear ( GL_COLOR_BUFFER_BIT ) ;
   
   puDisplay () ;
-  
-  //this displays the images on the screen
-  if(!imgsOnScr.empty() && glutGetWindow() == imgsOnScr[curImg]->winNum){
-    //cout << "does this get called?\n";
-    glCallList(curImg+1);
-  }
-  
-  //here's a trial rock it please!
-  /*  if(!imgsOnScr.empty() && glutGetWindow() == imgsOnScr[curImg]->winNum){
-    //cout << "does this get called?\n";
-    glListBase(1);
-    //ok make the lists from the imgsOnScr vector...
-    //for now, this doesnt really work cuz if you close an img it still has it
-    int i=0;
-    glImgLists = new int[imgsOnScr.size()];
-    while(i<imgsOnScr.size()){
-      glImgLists[i] = i;
-      i++;
-    }
-    glCallLists(imgsOnScr.size(), GL_INT, glImgLists);
-    }*/
-
-  /*the above needs to be changed to lists of display lists... check it out below
-  it's not really intuitive
-  glListBase(0);
-  GL_INT lists[] = {1,1,3,5};
-  glCallLists(4,GL_INT,lists);
-  ok, so that code calls the lists 1, 2, 5 and 10 that were created using glNewList
-  just like normal
-  */
-  
+    
   glutSwapBuffers () ;
   glutPostRedisplay () ;
 }
@@ -105,80 +129,22 @@ void keyb(unsigned char key, int x, int y){
   glutPostRedisplay();
 }
 
-//file menu -- revertCB
-void revertCB(){
-  revert2A(imgsOnScr[curImg]);
-  glutSetWindow(imgsOnScr[curImg]->winNum);
-  glNewList(curImg+1, GL_COMPILE);
-  glRasterPos2i(-1,-1 ); //what is up with this? 0,0 supposed to be lower left corner...
-  glDrawPixels(imgsOnScr[curImg]->A->width(), 
-	       imgsOnScr[curImg]->A->height(),
-	       GL_RGB,
-	       GL_UNSIGNED_BYTE,
-	       imgsOnScr[curImg]->C);
-  glEndList();
-  
-  cout << glutGetWindow() << "should be : " << imgsOnScr[curImg]->winNum << endl; 
-  glutPostRedisplay();
-}
-
 //FILE MENU -- OPEN DIALOG BOX CALLBACK
 void openFileCB(puObject*){
   char* fileName;
   openDialogBox->getValue(&fileName);
   
-  imgsOnScr.push_back(initDspWin(fileName)); //from dspWin.h
+  loadedImg = initDspWin(fileName); //from dspWin.h
 
-  curImg = imgsOnScr.size() - 1;
+  //create the windows for it, booh ya ka-sha!
+  glutInitWindowSize(loadedImg->A->height(), loadedImg->A->width());
+  winA = glutCreateWindow(fileName);
+  glutDisplayFunc(dispfnWinA);
   
-  //display it??
-  glutInitWindowSize(imgsOnScr[curImg]->A->width(), imgsOnScr[curImg]->A->height());
-  glutInitWindowPosition(0,0);
-  imgsOnScr[curImg]->winNum = glutCreateWindow(fileName);
-  
-  glutDisplayFunc(displayfn); //oktesting this then
-  glutEntryFunc(enterLeaveWin);
-  
-  //FIX NEEDED -- create a global create glut menu function for these cuz they're all the same
-  vector<function>::const_iterator it = loadedFunctions.begin();
-  glutCreateMenu(createParamsWin); //in the future, if we want, this returns an int as an id
-
-  int i=0;
-  while(it != loadedFunctions.end()){
-    glutAddMenuEntry((char*)it->name, i++);
-    it++;
-  }
-  
-  glutAddMenuEntry("Revert", 9999); //this is hardcoded
-
-  glutAttachMenu(GLUT_RIGHT_BUTTON);
-  //end menu creation
-
-  //lets go man, out of the frying pan
-  
-  //OK THIS WORKS NICE FOR A SINGLE FILE
-  //BUT WE NEED TO REDO IT TO WORK ON LISTS OF LISTS (glCallLists)
-  //FOR MULTIPLE FILES
-  
-  glNewList(curImg+1, GL_COMPILE);
-//glutSetWindow(curImg+2);
-  glRasterPos2i(-1,-1 ); //what is up with this? 0,0 supposed to be lower left corner...
-  glDrawPixels(imgsOnScr[curImg]->A->width(), 
-	       imgsOnScr[curImg]->A->height(),
-	       GL_RGB,
-	       GL_UNSIGNED_BYTE,
-	       imgsOnScr[curImg]->C);
-  glEndList();
- 
-  glutDisplayFunc(displayfn);
-  glutPostRedisplay();
-  
-  //the following note was in a pui ex file, it's probably important
-
-  //NOTE: interface creation/deletion must be nested
-  //the old interface must be deleted *before* a new one is created
-  //otherwise the interface stack will be messed up
-  
+  glutInitWindowSize(loadedImg->A->height(), loadedImg->A->width());
+  winB = glutCreateWindow(fileName);
+  glutDisplayFunc(dispfnWinB);
+   
   puDeleteObject(openDialogBox);
   
   //we need to add some kind of if clause for the cancel button
@@ -189,24 +155,17 @@ void openFileCB(puObject*){
 
 //FILE MENU -- OPEN CALLBACK
 void openCB(puObject*){
-  openDialogBox = new puFileSelector(50, 50, 300, 450, "", "Please select an image");
-  openDialogBox->setInitialValue(" ");
+  openDialogBox = new puFileSelector(0, 0, 252, 324, "", "Please select an image");
+  openDialogBox->setInitialValue(" "); //make this pretty later
   openDialogBox->setChildBorderThickness(PUCLASS_INPUT, 1);
   openDialogBox->setCallback(openFileCB);
 }
 
-//PARAMS WINDOW -- CANCEL CALLBACK
-void paramsWinCancelCB(puObject*){
-  //free up all that memory...
-  paramsWinObjects.clear();
-  delete paramsWin;
-}
-
 //PARAMS WINDOW -- OK CALLBACK
-//REMINDER: this is the beef of the program, the reason for its living, make 
-//sure that its done well.
 void paramsWinOKCB(puObject*){
-  
+  //check to make sure there's an image loaded
+  if(loadedImg == NULL) return;
+
   //create a list of the param values (in the right order) for the function call
   char *params[paramsWinObjects.size()+4]; //we add 2 to the size cuz the first element is the function name, and the last element is a null value
   
@@ -226,95 +185,147 @@ void paramsWinOKCB(puObject*){
   params[paramsWinObjects.size()+2] ="/tmp/tmp2.fuk"; //outfile -- this will be trashed
   params[paramsWinObjects.size()+3] = '\0';
 
-  //remove the params dialog 
-  //FIX NEEDED -- why does this wait until the end of the function to clear from screen???
+  //clear the params so the next loaded function will be able to make them
   paramsWinObjects.clear();
-  delete paramsWin;
-  glutPostRedisplay();
 
   glutSetCursor(GLUT_CURSOR_WAIT); //make a cool wait cursor for while the function is running
-  callFunct(imgsOnScr[curImg], curFunction, params); //from dspWin.h
+  callFunct(loadedImg, curFunction, params); //from dspWin.h
   glutSetCursor(GLUT_CURSOR_INHERIT);
 
-  //callFunct runs the function on dspWin, deletes the tmp files, displays the result, DAMN that's a lot of work
-  glutSetWindow(curImg+2);
-  glNewList(curImg+1, GL_COMPILE);
-  glRasterPos2i(-1,-1 ); //what is up with this? 0,0 supposed to be lower left corner...
-  glDrawPixels(imgsOnScr[curImg]->A->width(), 
-	       imgsOnScr[curImg]->A->height(),
-	       GL_RGB,
-	       GL_UNSIGNED_BYTE,
-	       imgsOnScr[curImg]->C);
-  glEndList();
-  
-  cout << glutGetWindow() << "should be : " << imgsOnScr[curImg]->winNum << endl; 
+  //now redisplay c in winb
+  glutSetWindow(winB);
   glutPostRedisplay();
+  glutSwapBuffers();
 }
 
 //FUNCTION MENU -- CALLBACK
 void createParamsWin(int num){
 
-  //check to see if revert was called
-  //FIX NEEDED -- i'd like to have these constant numbers for the menu items be constants
-  if(num==9999){
-    revertCB();
-    return;
-  }
-
   //otherwise do normal thing
   curFunction = num;
   
- //this is most definetly not the ideal way to do this, but for now....
-  paramsWin = new puDialogBox(0, 0);
-  {//this is weird syntax
-    //this is the background
-    puFrame *box;
-    box = new puFrame(25,50,250,350);
-    box->setColour(PUCOL_BACKGROUND, 1,1,1, 1);
-    box->setStyle(PUSTYLE_BOXED);
-    box->setBorderThickness(1);
-
-    //loop over the params of the function
+  puFrame *box;
+  box = new puFrame(0,0,252,324);
+  box->setColour(PUCOL_BACKGROUND, 1,1,1, 1);
+  box->setStyle(PUSTYLE_BOXED);
+  box->setBorderThickness(1);
   
-    vector<pairBuff10>::const_iterator it = loadedFunctions[num].params.begin();
-    
-    //loop over the params vector, creating fun widgets as we go
-    int y=300; 
-    int x=100;
-    while(it!=loadedFunctions[num].params.end()){
-      //if it's an int make a box for it
-      if((string)it->second == (string)"int"){
-	puInput *tmp = new puInput ( x, y, x+50,y+20 ) ;
-	tmp->setBorderThickness(1);
-	tmp->setLabelPlace(PUPLACE_CENTERED_LEFT);
-	tmp->setLabel(it->first);
-	paramsWinObjects.push_back(tmp); //push these onto the vector so we can grab their values later
-	y-=30;
-      }     
-      //if it's a boolean make a checkbox
-      else if((string)it->second == (string)"bool"){
-	puButton *tmp = new puButton(x, y, x+10, y+10, PUBUTTON_XCHECK);
-	tmp->setLabelPlace(PUPLACE_CENTERED_LEFT);
-	tmp->setLabel(it->first);
-	paramsWinObjects.push_back(tmp); //push these onto the vector so we can grab their values later
-	y-=30;
-      }
-      //add enum stuff here
-      it++;
+  //loop over the params of the function  
+  vector<pairBuff10>::const_iterator it = loadedFunctions[num].params.begin();
+  
+  //loop over the params vector, creating fun widgets as we go
+  int y=280; 
+  int x=100;
+  while(it!=loadedFunctions[num].params.end()){
+    //if it's an int make a box for it
+    if((string)it->second == (string)"int"){
+      puInput *tmp = new puInput ( x, y, x+50,y+20 ) ;
+      tmp->setBorderThickness(1);
+      tmp->setLabelPlace(PUPLACE_CENTERED_LEFT);
+      tmp->setLabel(it->first);
+      paramsWinObjects.push_back(tmp); //push these onto the vector so we can grab their values later
+      y-=30;
+    }     
+    //if it's a boolean make a checkbox
+    else if((string)it->second == (string)"bool"){
+      puButton *tmp = new puButton(x, y, x+10, y+10, PUBUTTON_XCHECK);
+      tmp->setLabelPlace(PUPLACE_CENTERED_LEFT);
+      tmp->setLabel(it->first);
+      paramsWinObjects.push_back(tmp); //push these onto the vector so we can grab their values later
+      y-=30;
     }
-    y-=30;
-    puOneShot *ok = new puOneShot(x,y,"OK");
-    ok->setBorderThickness(2);    
-    ok->setCallback(paramsWinOKCB);
-    puOneShot *cancel = new puOneShot(x+45, y, "Cancel");
-    cancel->setBorderThickness(2);
-    cancel->setCallback(paramsWinCancelCB);
+    //add enum stuff here
+    it++;
   }
-  paramsWin->close();
-  paramsWin->reveal();  
+  puOneShot *ok = new puOneShot(x,y,"Run");
+  ok->setBorderThickness(2);    
+  ok->setCallback(paramsWinOKCB);
 }
 
-//FILE MENU -- EXIT CALLBACK
+//FILE MENU -- add function callback
+//LET ME JUST SAY THAT I AM NOT RESPONSIBLE FOR THIS SHIT
+void addFuncCB(puObject*){
+  //grab the path to the binary
+  addFuncPath = new puFileSelector(0, 0, 252, 324, "", "Please select a function binary");
+  addFuncPath->setInitialValue(" "); //make this pretty later
+  addFuncPath->setChildBorderThickness(PUCLASS_INPUT, 1);
+  addFuncPath->setCallback(addFuncPathCB);  
+}
+
+void addFuncPathCB(puObject*){
+  addFuncPath->getValue(addFuncPathValue); //store value of the filepath
+  puDeleteObject(addFuncPath);
+  
+  cout << "path: " << addFuncPathValue << endl;
+  addFuncName = new puInput(50, 150, 100, 170);
+  addFuncName->setBorderThickness(1);
+  addFuncName->setLabelPlace(PUPLACE_CENTERED_LEFT);
+  addFuncName->setLabel("Name: ");
+  
+  addFuncParamsNum = new puInput(50, 100, 100, 120);
+  addFuncParamsNum->setBorderThickness(1);
+  addFuncParamsNum->setLabelPlace(PUPLACE_CENTERED_LEFT);
+  addFuncParamsNum->setLabel("# of params: ");
+  
+  ok = new puOneShot(50,50,"Ok");
+  ok->setBorderThickness(2);    
+  ok->setCallback(addFuncNameCB);
+}
+
+void addFuncNameCB(puObject*){
+  cout << "do we get here\n";
+  addFuncName->getValue(addFuncNameValue); //get this value
+  addFuncParamsNum->getValue(addFuncParamNumValue);
+  puDeleteObject(addFuncName);
+  puDeleteObject(addFuncParamsNum);
+  puDeleteObject(ok);
+  
+  //loop over the params vector, creating fun widgets as we go
+  int y=280; 
+  int x=100;
+  int i =0; 
+  while(i != *addFuncParamNumValue){
+    puInput *tmp = new puInput ( x, y, x+50,y+20 ) ;
+    tmp->setBorderThickness(1);
+    tmp->setLabelPlace(PUPLACE_CENTERED_LEFT);
+    tmp->setLabel("Name:");
+    addFuncParams.push_back(tmp); //push these onto the vector so we can grab their values later
+    y-=30;
+    //add type boxes
+    tmp = new puInput ( x, y, x+50,y+20 ) ;
+    tmp->setBorderThickness(1);
+    tmp->setLabelPlace(PUPLACE_CENTERED_LEFT);
+    tmp->setLabel("Type:");
+    addFuncParams.push_back(tmp); //push these onto the vector so we can grab their values later
+    y-=30;
+    i++;
+  }       
+
+  ok = new puOneShot(x,y,"Run");
+  ok->setBorderThickness(2);    
+  ok->setCallback(addFuncFinalCB);
+}
+
+void addFuncFinalCB(puObject*){
+  unsigned int j = 0;
+  //loop over the param values from the window
+  while(j < addFuncParams.size()){
+    parameter tmp;
+    char *tmp1 = new char[80];
+    addFuncParams[j++]->getValue(tmp1);
+    tmp.name = tmp1;
+
+    addFuncParams[j++]->getValue(tmp1);
+    tmp.type = tmp1;
+    addFuncParamsValues.push_back(tmp);
+    j++;
+  }
+  //ok call this fucker
+  //these all need to be changed to string
+  newFunct((string)addFuncNameValue, (string)addFuncPathValue, addFuncParamsValues);
+}
+
+//FILE MENU -- exit function callback
 void exitCB(puObject*){ //work on this later, we need to pass all of this shyte
   //delete all of this memory
   puDeleteObject(mainMenu);
@@ -327,31 +338,34 @@ void exitCB(puObject*){ //work on this later, we need to pass all of this shyte
 
 //FILE MENU -- SAVE CALLBACK
 void saveCB(puObject*){
-  saveDspWin(imgsOnScr[curImg]);
-  // cout << imgsOnScr[curImg]->path;
+  saveDspWin(loadedImg);
 }
 
-int main ( int argc, char **argv )
-{
-  glutInitWindowSize ( 750, 550 ) ;
+int main ( int argc, char **argv ){
+  mainWinHeight = 250;
+  mainWinWidth = 350;
+  glutInitWindowSize ( mainWinHeight, mainWinWidth ) ;
   glutInit ( &argc, argv ) ;
   glutInitDisplayMode ( GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH ) ;
-  mainWin = glutCreateWindow ("limelight ALPHA" ) ;
+  mainWin = glutCreateWindow ("limelight jr" ) ;
   glutDisplayFunc ( displayfn ) ;
   glutMouseFunc ( mousefn ) ;
   glutMotionFunc ( motionfn ) ;
   glutKeyboardFunc(keyb);
-  
+
+  glutSetWindow(mainWin);
   puInit();
-  puDisplay();
+  puDisplay();  
+
   //ok let's try this shit
   //menus must be declared backwards and we get seg faults if we don't make the char of a specified array length
 
   char **file_submenu = new (char*)[10];
-  file_submenu[2] = "Open";
+  file_submenu[3] = "Open";
+  file_submenu[2] = "Add new function";
   file_submenu[1] = "Save";
   file_submenu[0] = "Exit";
-  puCallback file_submenu_cb [3] = { exitCB, saveCB, openCB};
+  puCallback file_submenu_cb [4] = { exitCB, saveCB, addFuncCB, openCB};
 
   //read in functions and make a glut style menu
   createMenu("funct.fuk", loadedFunctions); //load 'er up
@@ -363,34 +377,17 @@ int main ( int argc, char **argv )
     glutAddMenuEntry((char*)it->name, i++);
     it++;
   }
-  
-  glutAddMenuEntry("Revert", 9999); //this is hardcoded
 
-  glutAttachMenu(GLUT_RIGHT_BUTTON);
-  //end menu creation
+  glutAttachMenu(GLUT_RIGHT_BUTTON); //end menu creation
 
-  /*DOESN'T WORK, HOPEFULLY FIX LATER
-  //here's where it a-goes down
-  createMenu("funct.fuk", loadedFunctions); //load 'er up
-  
-  char** functSubmenu = new (char*)[loadedFunctions.size()];
-  
-  vector<function>::const_iterator it = loadedFunctions.begin();
-  int i=0;
-  while(it != loadedFunctions.end()){
-    functSubmenu[i++] = (char*)it->name;
-    it++;
-  }
-  puCallback functSubmenuCB [loadedFunctions.size()];
-  i=0;
-  while(i<(const int)loadedFunctions.size())
-    functSubmenuCB[i++] = createParamsWin; //WHAT GOES HERE???
-  //end the a-going-down-ness
-  */
+  //draw a line for the top of the screen
+  puFrame *top =  new puFrame(0,350,250,326.5);
+  top->setColour(PUCOL_BACKGROUND, 1,1,1,1);
+  top->setStyle(PUSTYLE_BOXED);
+  top->setBorderThickness(1);  
 
   mainMenu = new puMenuBar ( -1 );
-  mainMenu->add_submenu ( "File", file_submenu, file_submenu_cb ) ;
-  //  mainMenu->add_submenu ( "Functions", functSubmenu, functSubmenuCB);
+  mainMenu->add_submenu ( "File", file_submenu, file_submenu_cb );
   mainMenu->close ();
 
   glutMainLoop () ;
