@@ -34,10 +34,13 @@
 #include <iostream>
 //WHAT ELSE??
 
+#ifndef PARAM_S
+#define PARAM_S
 struct parameter {
-  string type;
   string name;
+  string type;
 };
+#endif
 
 void newFunct(string name, string path, list<parameter> &paramList) {
   
