@@ -34,9 +34,9 @@ else
  *hmmmm... i think that we can totally get rid of c and d... (glPixelZoom(1.0,-1.0)), haha. except giving it a neg num doesnt work (WTF??)
  *check out disabling gl states we dont use -- DONE ts (3/12)
 
- *other improvements: 
+ *wish list:
  *'close' menu item -- DONE ts (3/11)
- *add a printout from the stdout (this one is a little hard, we need to make it pipe the exec)
+ *add a printout from the stdout (this one is a little hard, we need to make it pipe the exec) -- dup2 to a text file so people can look at it later
  *add a function remove feature...
  *rename func.fuk to configure something or other
  *rename enviro to limelight -- DONE ts (3/12)
@@ -106,12 +106,13 @@ int winA, winB; //these will be the image windows, ROCK AND ROLL
 //stuff for zoom and pan
 int mouseOn = 0;
 int posWidth, posHeight;
-int newOffX=0;
-int newOffY=0;
-int offSetX=0;
-int offSetY=0;
-int zoom=0;
+double newOffX=0.0;
+double newOffY=0.0;
+double offSetX=0.0;
+double offSetY=0.0;
+int zoom=0; //whether or not we are zooming
 double zoomAmount=1.0;
+double zoomOffSetY = 0.0;
 
 //pui globals
 puFileSelector *addFuncPath;
@@ -151,61 +152,66 @@ void mousefn(int button, int updown, int x, int y){
 }
 
 void motionfnWinA(int x, int y ){
-  //for the pan
-  
-  newOffX=(posWidth-x)/10;
-  newOffY=(posHeight-y)/10;
-  
-  offSetX += newOffX;
-  offSetY += newOffY;
-    
-  if(offSetX<0)offSetX=0;
-  if(offSetY<0)offSetY=0;
-  if(offSetX > (loadedImg->A->width() / 2)) offSetX = (loadedImg->A->width() / 2);
-  if(offSetY > (loadedImg->A->height() / 2)) offSetY = (loadedImg->A->height() / 2);
-  
-  cout << "offset y: " << offSetY << " offset x: " << offSetX << endl;
-  //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glPixelStorei(GL_UNPACK_SKIP_ROWS, offSetY);
-  glPixelStorei(GL_UNPACK_SKIP_PIXELS, offSetX);
-  glRasterPos2i(-1,-1 );
-  glPixelZoom(2.0,2.0);
-  glDrawPixels(loadedImg->A->width(),
-	       loadedImg->A->height(),
-	       GL_RGB,
-	       GL_UNSIGNED_BYTE,
-	       loadedImg->D);
-  //i think that we don't need these things if we just call the actual display function
-  //when this works see what else we can jack out of it
-  dispfnWinA();
-  glutPostRedisplay();
+ //for the zoom
+  /*ZOOM RESETS TO 0 SOMETIMES ON THE SECOND GO AROUND*/
+  if(zoom==1){
+    zoomOffSetY = (double)(posHeight-y) / 10; //so for every 10 pixels we go in a tenth of a zoom level
+    zoomAmount = zoomOffSetY + 1.0;
+ 
+    if(zoomAmount < 1.0) zoomAmount = 1.0;
+    if(zoomAmount > 10.0) zoomAmount = 10.0;
+    cout << "za: " <<zoomAmount << endl;
+    glPixelZoom(zoomAmount,zoomAmount);
+    glutPostRedisplay();
     glutSwapBuffers();
+    return;
+  }
+  
+  else if (zoomAmount == 1.0) return; //we cannot pan if zoom is 1
+  
+  else{
+    /*REMEMBER TO TEST PAN ON LENA AND STOP (AND WITH LITTLE ZOOM AMOUNTS AND BIG ONES)*/
+    //for the pan 
+    newOffX=(posWidth-x)/zoomAmount; //5 is a 'slowing down' factor
+    newOffY=(posHeight-y)/zoomAmount;//add the slow down factor in later when this works
     
-  //for the zoom
-  /*if(zoom==1){
-    newOffY=(posHeight-y)/2;
-    
+    offSetX += newOffX;
     offSetY += newOffY;
     
-    offSetY /= 10;
-    zoomAmount += (double)offSetY;
-    //glPixelZoom(zoomAmount,zoomAmount);
-    dispfnWinA();
-    return;
-    }*/
+    if(offSetX<0)offSetX=0;
+    if(offSetY<0)offSetY=0;
+    
+    if(offSetX > ((double)loadedImg->A->width() / zoomAmount)) offSetX = ((double)loadedImg->A->width() / zoomAmount);
+    if(offSetY > ((double)loadedImg->A->height() / zoomAmount)) offSetY = ((double)loadedImg->A->height() / zoomAmount);
+    cout << "zoomAmout: " << zoomAmount << endl;
+    cout << "offsetY: " << offSetY << " " << "offSetX: " << offSetY << endl;
+    cout << "height: " << (double)loadedImg->A->height()/zoomAmount << " width: " << (double)loadedImg->A->width()/zoomAmount << endl;
+    glPixelStoref(GL_UNPACK_SKIP_ROWS, offSetY);
+    glPixelStoref(GL_UNPACK_SKIP_PIXELS, offSetX);
+    glutPostRedisplay();
+    glutSwapBuffers();
+  }
+ 
 }
 
 void mousefnWinA(int button, int updown, int x, int y){
   
   //for zoom
-  /*if(glutGetModifiers() == GLUT_ACTIVE_SHIFT){
-    zoom = 1;
+  if(glutGetModifiers() == GLUT_ACTIVE_SHIFT){
+    glutSetCursor(GLUT_CURSOR_DESTROY);
     if(updown == GLUT_DOWN){
-      cout << "start zoom\n";
-      posHeight=y;
+      if(zoom!=1){
+	zoom = 1;
+	cout << "start zoom\n";
+	posHeight=y; //later we can make this the same as posHeight, but for now this will be easier
+      }
     }
-    return;
-    }*/
+    else{
+      glutSetCursor(GLUT_CURSOR_INHERIT);
+      zoom = 0;
+    }
+    return; //we don't want people panning and zooming at the same time -- that'd just be insane!
+  }
 
   //for the pan
   if(updown == GLUT_DOWN){
@@ -219,18 +225,18 @@ void mousefnWinA(int button, int updown, int x, int y){
       glutSetCursor(GLUT_CURSOR_INFO);
     }
   }
-  else if (updown == GLUT_UP) 
+  else if (updown == GLUT_UP){ 
     glutSetCursor(GLUT_CURSOR_INHERIT);
     mouseOn = 0;
-    
+  }
 }
 
 void dispfnWinA(){ 
   if(loadedImg!=NULL){
     glClearColor( 0.9, 1.0, 0.9, 1.0 );
     glClear(GL_COLOR_BUFFER_BIT);
-    glPixelZoom(2.0,2.0);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelZoom(zoomAmount,zoomAmount);
+    glPixelStoref(GL_UNPACK_ALIGNMENT, 1);
     glRasterPos2i(-1,-1 );
     glDrawPixels(loadedImg->A->width(),
 		 loadedImg->A->height(),
@@ -272,9 +278,6 @@ void keyb(unsigned char key, int x, int y){
   puKeyboard(key, PU_DOWN); //so we need this on our keyboard thing to have that work....
   glutPostRedisplay();
    
-  if(glutGetModifiers() == GLUT_ACTIVE_ALT)
-    glutSetCursor(GLUT_CURSOR_DESTROY);
-
   //keyboard shortcuts
   int KEYCONST = 4; //this means alt key, ctrl is 2, but for some reason it doesnt work...
   
@@ -750,7 +753,7 @@ int main ( int argc, char **argv ){
     cout << argv[1] << endl;
     openFile(argv[1]);
   }
-  cout << "before the glut main loop\n";  
+
   glutMainLoop () ;
 
   return 0 ;
