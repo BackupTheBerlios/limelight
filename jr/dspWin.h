@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-
+using namespace std;
 /*
   This header holds the struct that will probably be put into a vector
   of all currently loaded images.  A dspWin is the structure of:

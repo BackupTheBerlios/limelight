@@ -25,14 +25,13 @@
 // If this is going to use struct, what header should "parameter" be in?
 
 
-#include <list>
+#include <list.h>
 #include <utility>
 #include <string>
-#include <fstream>
+#include <fstream.h>
+#include <iostream.h>
 
-//for tests
-#include <iostream>
-//WHAT ELSE??
+using namespace std;
 
 #ifndef PARAM_S
 #define PARAM_S

@@ -1,52 +1,42 @@
 //this is the main file
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef __APPLE__
+#include <glut/glut.h>
+#else
+#include <GL/glut.h>
+#endif
 #ifdef WIN32
 #include <windows.h>
 else
 #include <unistd.h>
 #endif
 #include <math.h>
-#include <GL/glut.h>
 #include <plib/pu.h>
 #include <iostream>
-#include <vector>
+#include <vector.h>
+#include <string>
 #include "functRead.h" //what a bad name for this header file
 #include "dspWin.h" // a much better job of naming is going on here
 #include "functionFileCreator.h"
 
-
-//327 lines before all features added
 using namespace std;
 
-/********************* prototypes */
+//prototypes
 void createParamsWin(int num);
-/*********************************/
 
-/*********************ok here we go: this will be a class but i dont feel like making a class right now *************/
+//globals
 
-//vector<function> loadedFunctions; //this is read in from the funct.fuk file UGLINESS!!!(i think that functRead.h gives us this thats why its ugly)
 puMenuBar *mainMenu;
 puFileSelector *openDialogBox;
 int mainWin;
 vector<puObject*> paramsWinObjects; 
-puDialogBox *paramsWin; //this is an ugly hack for now
-vector< dspWin* > imgsOnScr; //this is the images currently on the screen
 int curImg; 
-//at the moment we're not using win 1, which is the main window
-int w2; // tsk, tsk, so messy, we'll take care of this soon
 int curFunction; //set this when a function menu item is called
-int *glImgLists; //this is for the gl list call back, do this later in a better way
-
-/********/
-
-/*************************** hey hey, new shit for JR goes down here *****************/
 dspWin* loadedImg; //this is the loaded image woohoo!
-int mainWinWidth, mainWinHeight; //used for checking size of window vs. loaded img
+int mainWinWidth, mainWinHeight; //these aren't used right now, but they should eventually be used to increase the size if the params are very large
 int winA, winB; //these will be the image windows, ROCK AND ROLL
-int winAHeight, winAWidth; //yes
 
 /*********************** pui globals (globally defined gui elements are not my friend *****/
 puFileSelector *addFuncPath;
@@ -59,9 +49,9 @@ void addFuncCB(puObject*);
 void addFuncPathCB(puObject*);
 void addFuncNameCB(puObject*);
 void addFuncFinalCB(puObject*);
-
 puOneShot *ok;
 /************end pui shit ******* fuck you pui*/
+
 #ifndef PARAM_S
 #define PARAM_S
 struct parameter {
@@ -84,8 +74,8 @@ void mousefn ( int button, int updown, int x, int y ){
 
 void dispfnWinA(){ 
   glutSetWindow(winA);
-  glClearColor ( 0.9, 1.0, 0.9, 1.0 ) ;
-  glClear ( GL_COLOR_BUFFER_BIT ) ;
+  glClearColor( 0.9, 1.0, 0.9, 1.0 );
+  glClear(GL_COLOR_BUFFER_BIT);
   
   glRasterPos2i(-1,-1 );
   glDrawPixels(loadedImg->A->width(), 
@@ -93,15 +83,14 @@ void dispfnWinA(){
 	       GL_RGB,
 	       GL_UNSIGNED_BYTE,
 	       loadedImg->D);
-  glutSwapBuffers () ;
-  glutPostRedisplay () ;
+  glutSwapBuffers();
+  glutPostRedisplay();
 }
 
 void dispfnWinB(){
   glutSetWindow(winB);
-
-  glClearColor ( 0.9, 1.0, 0.9, 1.0 ) ;
-  glClear ( GL_COLOR_BUFFER_BIT ) ;
+  glClearColor( 0.9, 1.0, 0.9, 1.0 );
+  glClear(GL_COLOR_BUFFER_BIT);
   
   glRasterPos2i(-1,-1 );
   glDrawPixels(loadedImg->A->width(), 
@@ -109,18 +98,17 @@ void dispfnWinB(){
 	       GL_RGB,
 	       GL_UNSIGNED_BYTE,
 	       loadedImg->C);
-  glutSwapBuffers () ;
-  glutPostRedisplay () ;
+  glutSwapBuffers();
+  glutPostRedisplay();
 }
 
-void displayfn (){
-  glClearColor ( 0.9, 1.0, 0.9, 1.0 ) ;
-  glClear ( GL_COLOR_BUFFER_BIT ) ;
-  
-  puDisplay () ;
+void displayfn(){
+  glClearColor( 0.9, 1.0, 0.9, 1.0);
+  glClear(GL_COLOR_BUFFER_BIT);
+  puDisplay();
     
-  glutSwapBuffers () ;
-  glutPostRedisplay () ;
+  glutSwapBuffers();
+  glutPostRedisplay();
 }
 
 void keyb(unsigned char key, int x, int y){
@@ -133,14 +121,13 @@ void openFileCB(puObject*){
   char* fileName;
   openDialogBox->getValue(&fileName);
   loadedImg = initDspWin(fileName); //from dspWin.h
-  cout << "the image was loaded cool\n";
+
   //create the windows for it, booh ya ka-sha!
   glutInitWindowSize(loadedImg->A->height(), loadedImg->A->width());
-  cout << "do the access work?\n";
+
   winA = glutCreateWindow(fileName);
-  cout << "did create window work\n";
   glutDisplayFunc(dispfnWinA);
-  cout << "does the display a work?\n"; 
+
   glutInitWindowSize(loadedImg->A->height(), loadedImg->A->width());
   winB = glutCreateWindow(fileName);
   glutDisplayFunc(dispfnWinB);
@@ -151,6 +138,7 @@ void openFileCB(puObject*){
   //but the cancel button doesn't have it's own callback
 
   cout << "open the file: " << fileName << endl;
+  //we don't want to delete the filName, cuz the glut windows use it
 }
 
 //FILE MENU -- OPEN CALLBACK
@@ -185,13 +173,9 @@ void paramsWinOKCB(puObject*){
   params[paramsWinObjects.size()+2] ="/tmp/tmp2.fuk"; //outfile -- this will be trashed
   params[paramsWinObjects.size()+3] = '\0';
 
-  //clear the params so the next loaded function will be able to make them
+  //TO DO: clear the params so the next loaded function will be able to make them
+  //it's true, this needs to be done, but only after a new function is loaded
   //paramsWinObjects.clear();
-
-  cout << "TESTING" << endl;
-  int k=0;
-  while(params[k] != '\0')
-    cout << params[k++] << endl;
 
   glutSetCursor(GLUT_CURSOR_WAIT); //make a cool wait cursor for while the function is running
   callFunct(loadedImg, curFunction, params); //from dspWin.h
@@ -239,7 +223,7 @@ void createParamsWin(int num){
       paramsWinObjects.push_back(tmp); //push these onto the vector so we can grab their values later
       y-=30;
     }
-    //add enum stuff here
+    //TO DO: add enum stuff
     it++;
   }
   puOneShot *ok = new puOneShot(x,y,"Run");
@@ -249,23 +233,32 @@ void createParamsWin(int num){
 
 //FILE MENU -- add function callback
 //LET ME JUST SAY THAT I AM NOT RESPONSIBLE FOR THIS SHIT
+//(it was written between 3 and something in the morning, and it's all crap)
 void addFuncCB(puObject*){
   //grab the path to the binary
-  addFuncPath = new puFileSelector(0, 0, 252, 324, "", "Please select a function binary");
-  addFuncPath->setInitialValue(" "); //make this pretty later
+  addFuncPath = new puFileSelector(0, 0, 252, 324, "", "Please select a binary");
+  addFuncPath->setInitialValue("");
   addFuncPath->setChildBorderThickness(PUCLASS_INPUT, 1);
   addFuncPath->setCallback(addFuncPathCB);  
 }
 
 void addFuncPathCB(puObject*){
+ 
   addFuncPath->getValue(addFuncPathValue); //store value of the filepath
   puDeleteObject(addFuncPath);
+ 
+  //TO DO: check for cancel button (cuz it doesn't have its own callback)
+  //TO DO: these labels don't show up, i have NO idea why...
   
-  cout << "path: " << addFuncPathValue << endl;
+  //this guy needs to be deleted (aka globally declared)
+  puText *title = new puText(50, 200);
+  title->setLabelPlace(PUPLACE_CENTERED_LEFT);
+  title->setLabel("Add new function (2 of 3)");
+
   addFuncName = new puInput(50, 150, 100, 170);
+  addFuncName->setLabel("Name: ");
   addFuncName->setBorderThickness(1);
   addFuncName->setLabelPlace(PUPLACE_CENTERED_LEFT);
-  addFuncName->setLabel("Name: ");
   
   addFuncParamsNum = new puInput(50, 100, 100, 120);
   addFuncParamsNum->setBorderThickness(1);
@@ -337,16 +330,19 @@ void addFuncFinalCB(puObject*){
   cout << "function added\n";
 }
 
+//END SECTION OF CODE NO ONE IS RESPONSIBLE FOR
+
 //FILE MENU -- exit function callback
-void exitCB(puObject*){ //work on this later, we need to pass all of this shyte
-  //delete all of this memory
+void exitCB(puObject*){
   puDeleteObject(mainMenu);
-  //FIX NEEDED -- dealocate memory
- 
-  deleteDspWin(loadedImg);//that'll do for now
+  //TO DO: is this deallocating everything? 
+  
+  if(loadedImg != NULL){
+    glutDestroyWindow(winA);
+    glutDestroyWindow(winB); 
+    deleteDspWin(loadedImg); 
+  }
   glutDestroyWindow(mainWin);
-  glutDestroyWindow(winA);
-  glutDestroyWindow(winB);
   exit(0);
 }
 
@@ -359,7 +355,7 @@ void saveCB(puObject*){
 void saveFileAsCB(puObject*){
   char *tmp = new char[200];
   openDialogBox->getValue(tmp);
-  cout << "path: " << tmp << "|" << endl;
+  
   puDeleteObject(openDialogBox);
   
   saveDspWin(loadedImg, tmp);
@@ -367,6 +363,15 @@ void saveFileAsCB(puObject*){
   delete[] tmp;
 }
 
+//HELP MENU -- help callback
+void helpCB(puObject*){
+  cout << "help me!\n";
+}
+
+//HELP MENU -- about callback
+void aboutCB(puObject*){
+  cout << "about everything\n";
+}
 
 //FILE MENU -- SAVE AS CALLBACK
 void saveAsCB(puObject*){
@@ -392,16 +397,16 @@ int main ( int argc, char **argv ){
   puInit();
   puDisplay();  
 
-  //ok let's try this shit
-  //menus must be declared backwards and we get seg faults if we don't make the char of a specified array length
-
   char **file_submenu = new (char*)[10];
-  file_submenu[4] = "Open";
-  file_submenu[3] = "Add new function";
-  file_submenu[2] = "Save";
-  file_submenu[1] = "Save As";
+  file_submenu[7] = "Open";
+  file_submenu[6] = "-------";
+  file_submenu[5] = "Add new function";
+  file_submenu[4] = "-------";
+  file_submenu[3] = "Save";
+  file_submenu[2] = "Save As";
+  file_submenu[1] = "-------";
   file_submenu[0] = "Exit";
-  puCallback file_submenu_cb [5] = { exitCB, saveAsCB, saveCB, addFuncCB, openCB};
+  puCallback file_submenu_cb [8] = { exitCB, NULL, saveAsCB, saveCB, NULL, addFuncCB, NULL, openCB};
 
   //read in functions and make a glut style menu
   createMenu("funct.fuk", loadedFunctions); //load 'er up
@@ -422,8 +427,21 @@ int main ( int argc, char **argv ){
   top->setStyle(PUSTYLE_BOXED);
   top->setBorderThickness(1);  
 
+  //make the menu
+ 
+  //help submenu
+  char **help_submenu = new (char*)[5];
+  help_submenu[3] = "Help";
+  help_submenu[2] = "-------";
+  help_submenu[1] = "About";
+  help_submenu[0] = NULL;
+  puCallback help_submenu_cb [4] = {NULL, aboutCB, NULL, helpCB};
+
   mainMenu = new puMenuBar ( -1 );
   mainMenu->add_submenu ( "File", file_submenu, file_submenu_cb );
+  //TO DO: this menu won't display and I don't know why (hmmm, there's a pattern here, of things that are happening for reasons i do 
+  //not understand, and defy rules of logic, i think that this must have something to do with lack of sleep
+  mainMenu->add_submenu( "Help", help_submenu, help_submenu_cb);
   mainMenu->close ();
 
   glutMainLoop () ;

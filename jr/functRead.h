@@ -11,12 +11,14 @@
   *we need to make this a header file at some point (do we do includes here, or is that not kosher?)
 */
 
-#include <iostream>
-#include <fstream>
+#include <iostream.h>
+#include <fstream.h>
 #include <string>
-#include <list>
+#include <list.h>
 #include <utility> //for pairs
-#include <vector> //maybe params should be a vector too?
+#include <vector.h> //maybe params should be a vector too?
+
+using namespace std;
 
 //structure def
 
