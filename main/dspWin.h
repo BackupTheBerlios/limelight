@@ -146,7 +146,7 @@ void callFunct(dspWin *target, int i, char **par){
     
   //forking
   int pid;
-  int died, status, numArg; //status is set by the call to exec
+  int died, status; //status is set by the call to exec
 
   switch(pid=fork()){
   case -1: //error

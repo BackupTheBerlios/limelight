@@ -13,6 +13,6 @@
 CoolFunc1 ./coolFunc1 param1 int 
 CoolFunc2 ./coolFunc2 Yaw int Attack? bool Hue int Magic int Cool bool 
 CoolFunc3 ./coolFunc3 param1 int param2 int param3 bool 
-Segment /home/smitht/segment/segment sigma int ka int blah int 
+Segment /home/smitht/segment/segment Sigma int K int Min int 
 noParamsFunction ./crazy 
 noParamsFunction12 ./crazy 

@@ -19,16 +19,20 @@ else
 
 using namespace std;
 
+/********************* prototypes */
+void createParamsWin(int num);
+/*********************************/
+
 /*********************ok here we go: this will be a class but i dont feel like making a class right now *************/
 
-//vector<function> loadedFunctions; //this is read in from the funct.fuk file UGLINESS!!!
+//vector<function> loadedFunctions; //this is read in from the funct.fuk file UGLINESS!!!(i think that functRead.h gives us this thats why its ugly)
 puMenuBar *mainMenu;
 puFileSelector *openDialogBox;
 int mainWin;
 vector<puObject*> paramsWinObjects; 
 puDialogBox *paramsWin; //this is an ugly hack for now
 vector<dspWin*> imgsOnScr; //this is the images currently on the screen
-int curImg; //REVISION: MARCH 7th -- curImg is now a glutWindowID PLEASE NOTE THIS, these start at one and go up
+int curImg; 
 //at the moment we're not using win 1, which is the main window
 int w2; // tsk, tsk, so messy, we'll take care of this soon
 int curFunction; //set this when a function menu item is called
@@ -56,11 +60,10 @@ void mousefn ( int button, int updown, int x, int y )
   glutPostRedisplay () ;
 }
 
-void displayfn ()
-{
-  glClearColor ( 0.8, 0.8, 0.8, 1.0 ) ;
+void displayfn (){
+  glClearColor ( 0.9, 1.0, 0.9, 1.0 ) ;
   glClear ( GL_COLOR_BUFFER_BIT ) ;
-
+  
   puDisplay () ;
   
   //this displays the images on the screen
@@ -130,10 +133,27 @@ void openFileCB(puObject*){
   
   //display it??
   glutInitWindowSize(imgsOnScr[curImg]->A->width(), imgsOnScr[curImg]->A->height());
-  glutInitWindowPosition(0,0);   
+  glutInitWindowPosition(0,0);
   imgsOnScr[curImg]->winNum = glutCreateWindow(fileName);
+  
+  glutDisplayFunc(displayfn); //oktesting this then
   glutEntryFunc(enterLeaveWin);
   
+  //FIX NEEDED -- create a global create glut menu function for these cuz they're all the same
+  vector<function>::const_iterator it = loadedFunctions.begin();
+  glutCreateMenu(createParamsWin); //in the future, if we want, this returns an int as an id
+
+  int i=0;
+  while(it != loadedFunctions.end()){
+    glutAddMenuEntry((char*)it->name, i++);
+    it++;
+  }
+  
+  glutAddMenuEntry("Revert", 9999); //this is hardcoded
+
+  glutAttachMenu(GLUT_RIGHT_BUTTON);
+  //end menu creation
+
   //lets go man, out of the frying pan
   
   //OK THIS WORKS NICE FOR A SINGLE FILE
@@ -205,12 +225,19 @@ void paramsWinOKCB(puObject*){
   params[paramsWinObjects.size()+1] = "/tmp/tmp.fuk"; //infile -- this will be trashed
   params[paramsWinObjects.size()+2] ="/tmp/tmp2.fuk"; //outfile -- this will be trashed
   params[paramsWinObjects.size()+3] = '\0';
-  
-  callFunct(imgsOnScr[curImg], curFunction, params); //from dspWin.h
-  //callFunct runs the function on dspWin, deletes the tmp files, displays the result, DAMN that's a lot of work
 
-  glutSetWindow(imgsOnScr[curImg]->winNum);
- 
+  //remove the params dialog 
+  //FIX NEEDED -- why does this wait until the end of the function to clear from screen???
+  paramsWinObjects.clear();
+  delete paramsWin;
+  glutPostRedisplay();
+
+  glutSetCursor(GLUT_CURSOR_WAIT); //make a cool wait cursor for while the function is running
+  callFunct(imgsOnScr[curImg], curFunction, params); //from dspWin.h
+  glutSetCursor(GLUT_CURSOR_INHERIT);
+
+  //callFunct runs the function on dspWin, deletes the tmp files, displays the result, DAMN that's a lot of work
+  glutSetWindow(curImg+2);
   glNewList(curImg+1, GL_COMPILE);
   glRasterPos2i(-1,-1 ); //what is up with this? 0,0 supposed to be lower left corner...
   glDrawPixels(imgsOnScr[curImg]->A->width(), 
@@ -222,16 +249,13 @@ void paramsWinOKCB(puObject*){
   
   cout << glutGetWindow() << "should be : " << imgsOnScr[curImg]->winNum << endl; 
   glutPostRedisplay();
-
-  //make it ready for the next kid
-  paramsWinObjects.clear();
-  delete paramsWin;
 }
 
 //FUNCTION MENU -- CALLBACK
 void createParamsWin(int num){
 
   //check to see if revert was called
+  //FIX NEEDED -- i'd like to have these constant numbers for the menu items be constants
   if(num==9999){
     revertCB();
     return;
@@ -294,15 +318,17 @@ void createParamsWin(int num){
 void exitCB(puObject*){ //work on this later, we need to pass all of this shyte
   //delete all of this memory
   puDeleteObject(mainMenu);
-
+  //FIX NEEDED -- dealocate memory
+  if(!imgsOnScr.empty())
+    deleteDspWin(imgsOnScr[curImg]);//that'll do for now
   glutDestroyWindow(mainWin);
   exit(0);
 }
 
 //FILE MENU -- SAVE CALLBACK
 void saveCB(puObject*){
-  //saveDspWin(imgsOnScr[curImg], imgsOnScr[curImg]->path);
-  cout << imgsOnScr[curImg]->path;
+  saveDspWin(imgsOnScr[curImg]);
+  // cout << imgsOnScr[curImg]->path;
 }
 
 int main ( int argc, char **argv )
