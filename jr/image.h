@@ -50,8 +50,11 @@ image::image(const int width, const int height, const bool colored) {
   access = new unsigned char*[h];   // allocate space for row pointers
   
   // initialize row pointers
-  for (int i = 0; i < h; i++)
-    access[i] = data + (i * w * pixelCount);  
+  for (int i = 0; i < h; i++){
+    access[i] = new unsigned char[w*pixelCount];
+    for (int j = 0; j<width*pixelCount; j++)
+      j=&i[(i*w)+(j*pixelCount)];
+  }
 }
 
 image::~image() {
