@@ -30,7 +30,10 @@ else
 
  *hmmmm... i think that we can totally get rid of c and d... (glPixelZoom(1.0,-1.0)), haha. except giving it a neg num doesnt work (WTF??)
  *check out disabling gl states we dont use -- for macs and linux
- *add zoom/pan to second window
+ *remeber to not compile with -g in the final makefile
+ *reset the zoom and pan stuff when we open a new image
+ *kill save
+ *on linux kill the windows thing
 
  *wish list:
  *add a printout from the stdout (this one is a little hard, we need to make it pipe the exec) -- dup2 to a text file so people can look at it later
@@ -788,6 +791,7 @@ int main ( int argc, char **argv ){
   //here's some performance improvements (WOW!, that's a LOT quicker)
   //i think that we only need to disable them in main (not for every window)
   //framebuffer ops we don't need
+  /*
   glDisable(GL_SCISSOR_TEST);
   glDisable(GL_ALPHA_TEST);
   glDisable(GL_STENCIL_TEST);
@@ -799,7 +803,7 @@ int main ( int argc, char **argv ){
   glDisable(GL_TEXTURE_3D);
   glDisable(GL_LIGHTING);
   glDisable(GL_FOG);
-  
+  */
 
   //intialize the limelight function params window aka main window
   glutInitWindowSize ( 250, 400 ) ;

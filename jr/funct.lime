@@ -10,7 +10,7 @@
 # I'd like to change the param type to int instead of string later...
 # example function defintion:
 # lineDetect ./lineDetect precision int coolness bool
-Segment /home/smitht/segment/segment Sigma int K int Min int 
+Segment /nfs/harper/hc1/smitht/segment/segment Sigma int K int Min int 
 Black ../../alpha/funcTest Color int 
 CoolFunc1 ./coolFunc1 param1 int 
 CoolFunc2 ./coolFunc2 Yaw int Attack? bool Hue int Magic int Cool bool 
