@@ -259,7 +259,7 @@ main(int argc, char **argv)
   win1 = glutCreateWindow("sphere");
   glutEntryFunc(enter_leave);
   init();
-  glutDisplayFunc(display_win1);
+  glutDisplayFunc(display_in1);
   glutCreateMenu(it);
   glutAddMenuEntry("toggle draw mode", 1);
   glutAddMenuEntry("exit", 2);

@@ -15,6 +15,7 @@ else
 #include <vector>
 
 #include "functRead.h" //what a bad name for this header file
+#include "dspWin.h" // a much better job of naming is going on here
 
 using namespace std;
 
@@ -26,12 +27,9 @@ puFileSelector *openDialogBox;
 int mainWin;
 vector<puObject*> paramsWinObjects;
 puDialogBox *paramsWin; //this is an ugly hack for now
-
-//???
-void(*funct)();
-
-vector< void(*funct)() > cbs;  
-
+vector<dspWin*> imgsOnScr; //this is the images currently on the screen
+int curImg;
+int w2; // tsk, tsk, so messy
 /********/
 
 
@@ -53,7 +51,12 @@ void displayfn ()
   glClear ( GL_COLOR_BUFFER_BIT ) ;
 
   puDisplay () ;
-
+  
+  //OK WORK
+  if(glutGetWindow() == imgsOnScr[curImg]->winNum){
+    glCallList(curImg);
+  }
+  
   glutSwapBuffers () ;
   glutPostRedisplay () ;
 }
@@ -63,11 +66,41 @@ void keyb(unsigned char key, int x, int y){
   glutPostRedisplay();
 }
 
+//TMP DISPLAY FUNCTION
+//void disp(void){
+//  
+//  glFlush();
+//  displayfn();
+//}  
+
 //FILE MENU -- OPEN DIALOG BOX CALLBACK
 void openFileCB(puObject*){
   char* fileName;
   openDialogBox->getValue(&fileName);
   
+  curImg = imgsOnScr.size();
+  imgsOnScr.push_back(initDspWin(fileName)); //from dspWin.h
+  cout <<"do we get past here?\n";
+  
+  //display it??
+  glutInitWindowSize(imgsOnScr[curImg]->A->width(), imgsOnScr[curImg]->A->height());
+  glutInitWindowPosition(0,0);   
+  imgsOnScr[curImg]->winNum = glutCreateWindow(fileName);
+ 
+  //lets go man, out of the frying pan
+
+  glNewList(curImg, GL_COMPILE);
+  glRasterPos2i(-1,-1 ); //what is up with this? 0,0 supposed to be lower left corner...
+  glDrawPixels(imgsOnScr[curImg]->A->width(), 
+	       imgsOnScr[curImg]->A->height(),
+	       GL_RGB,
+	       GL_UNSIGNED_BYTE,
+	       imgsOnScr[curImg]->C);
+
+  glEndList();
+ 
+  glutDisplayFunc(displayfn);
+  glutPostRedisplay();
   //the following note was in a pui ex file, it's probably important
 
   //NOTE: interface creation/deletion must be nested
@@ -79,12 +112,12 @@ void openFileCB(puObject*){
   //we need to add some kind of if clause for the cancel button
   //but the cancel button doesn't have it's own callback
 
-  cout << "open the file: " << fileName << "|" << endl;
+  cout << "open the file: " << fileName << endl;
 }
 
 //FILE MENU -- OPEN CALLBACK
 void openCB(puObject*){
-  openDialogBox = new puFileSelector(50, 50, "./", "Please select a file");
+  openDialogBox = new puFileSelector(50, 50, "", "Please select a file");
   openDialogBox->setInitialValue(" ");
   openDialogBox->setChildBorderThickness(PUCLASS_INPUT, 1);
   openDialogBox->setCallback(openFileCB);
@@ -95,17 +128,8 @@ void paramsWinCancelCB(puObject*){
   delete paramsWin;
 }
 
-//CBS FOR FUNCTIONS
-void funcCBS(){
-  for(int i=0;i<loadedFunctions.size();i++){
-    void CB(puObject*){ createParamsWin(i);}
-    func = CB(puObject*);
-    cbs.push_back(func);
-  }
-}
-
 //FUNCTION MENU -- CALLBACK
-void createParamsWin(int num){
+void createParamsWin(puObject*){
   //this is lame, but we cannot pass anything in here, so we need to gather what function is being called
   //from somewhere else.... (thundercrash) but where?
   
@@ -121,12 +145,12 @@ void createParamsWin(int num){
 
     //loop over the params of the function
     //hardcoded for now 
-    vector<pairBuff10>::const_iterator it = loadedFunctions[num].params.begin();
+    vector<pairBuff10>::const_iterator it = loadedFunctions[1].params.begin();
     
     //loop over the params vector, creating fun widgets as we go
     int y=300; 
     int x=100;
-    while(it!=loadedFunctions[num].params.end()){
+    while(it!=loadedFunctions[1].params.end()){
       //if it's an int make a box for it
       if((string)it->second == (string)"int"){
 	puInput *tmp = new puInput ( x, y, x+50,y+20 ) ;
@@ -204,7 +228,7 @@ int main ( int argc, char **argv )
   puCallback functSubmenuCB [loadedFunctions.size()];
   i=0;
   while(i<(const int)loadedFunctions.size())
-    functSubmenuCB[i++] = cbs[i]; //WHAT GOES HERE???
+    functSubmenuCB[i++] = createParamsWin; //WHAT GOES HERE???
   //end the a-going-down-ness
 
   mainMenu = new puMenuBar ( -1 );

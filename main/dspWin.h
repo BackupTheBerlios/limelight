@@ -31,6 +31,7 @@ struct dspWin {
   image<rgb>* A;
   image<rgb>* B;
   unsigned char *C;
+  int winNum;
 };
 
 //prototypes
