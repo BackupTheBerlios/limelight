@@ -34,7 +34,7 @@ else
  *kill the glut menus
 
  *other improvements: 
- *'close' menu item
+ *'close' menu item -- DONE ts (3/11)
  *add a printout from the stdout
  *add a function remove feature...
  *rename func.fuk to configure something or other
@@ -65,6 +65,7 @@ map<const char *, int, ltstr> funcMap; // this is here for the drop down menu, c
 puMenuBar *mainMenu;
 puFileSelector *openDialogBox;
 int mainWin;
+int curWidget = 0;
 vector<puObject*> paramsWinObjects; 
 int curImg; 
 int curFunction; //set this when a function menu item is called
@@ -210,12 +211,13 @@ void openCB(puObject*){
 
 //PARAMS WINDOW -- OK CALLBACK
 void paramsWinOKCB(puObject*){
+  //TO DO: we should probably add some check to make sure there are values in the params...
   //check to make sure there's an image loaded
   cout << "is paramsWINCB called?\n";
   if(loadedImg == NULL) return;
 
   //create a list of the param values (in the right order) for the function call
-  char *params[paramsWinObjects.size()+4]; //we add 2 to the size cuz the first element is the function name, and the last element is a null value
+  char *params[paramsWinObjects.size()+4]; //we add 4 to the size cuz the first element is the function name, the last element is a null value, plus in and out files
   
   int i = 1; //remember, 0 is the func name
   unsigned int j = 0;
@@ -232,10 +234,6 @@ void paramsWinOKCB(puObject*){
   params[paramsWinObjects.size()+1] = "/tmp/tmp.fuk"; //infile -- this will be trashed
   params[paramsWinObjects.size()+2] ="/tmp/tmp2.fuk"; //outfile -- this will be trashed
   params[paramsWinObjects.size()+3] = '\0';
-
-  //TO DO: clear the params so the next loaded function will be able to make them
-  //it's true, this needs to be done, but only after a new function is loaded
-  //paramsWinObjects.clear();
 
   glutSetCursor(GLUT_CURSOR_WAIT); //make a cool wait cursor for while the function is running
   callFunct(loadedImg, curFunction, params); //from dspWin.h
@@ -510,36 +508,22 @@ int main ( int argc, char **argv ){
   puInit();
   puDisplay();  
 
-  //read in functions and make a glut style menu
+  //read in functions and make the drop down menu
   createMenu("funct.fuk", loadedFunctions); //load 'er up
   vector<function>::const_iterator it = loadedFunctions.begin();
   char **functionList = new (char*)[loadedFunctions.size()];
-  glutCreateMenu(createParamsWin); //in the future, if we want, this returns an int as an id
 
   int i=0;
   while(it != loadedFunctions.end()){
     functionList[i] = (char*)it->name;
-    glutAddMenuEntry((char*)it->name, i++);
+    funcMap[(char*)it->name] = i++; //map for drop down callback
     it++;
   }
-
-  glutAttachMenu(GLUT_RIGHT_BUTTON); //end menu creation  
   
   functionList[loadedFunctions.size()] = NULL; //again, this needs to be set to null for pui...
-  
-  for(int k=0;k<loadedFunctions.size()+1;k++)
-    cout << functionList[k++] << endl;
-  
-  it = loadedFunctions.begin();
-  i=0;
-  while(it!=loadedFunctions.end()){
-    //  cout << funcMap[(char*)it->name] << endl;
-    funcMap[(char*)it->name] = i++;
-    it++;
-  }
-  //ok, here's the functions shit, so you can change them
+ 
   funcItems = new puComboBox( 15, 335, 215, 360, functionList, FALSE ) ;
-  
+ 
   funcOk = new puOneShot(15, 300, "Change");
   funcOk->setBorderThickness(2);
   funcOk->setCallback(funcReload);
@@ -559,7 +543,7 @@ int main ( int argc, char **argv ){
   char *file_submenu[10] = {"Exit", "-----", "Save as", "Save", "-----", "Add new function", "-----","Close", "Open", NULL};
   puCallback file_submenu_cb [10] = { exitCB, NULL, saveAsCB, saveCB, NULL, addFuncCB, NULL, closeCB, openCB, NULL};
   
-  //make the menu
+  //make the main menu
   mainMenu = new puMenuBar ( -1 );
   mainMenu->add_submenu ( "File", file_submenu, file_submenu_cb);
   mainMenu->add_submenu( "Help", help_submenu, help_submenu_cb);
