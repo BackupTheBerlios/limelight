@@ -123,9 +123,9 @@ void get_D_ready (dspWin *target) {
   //since we want to start at bottom, i starts at height-1, goes to 0
   for (int i=height-1; i>=0; i--) {
     for (int j=0; j<width; j++) {
-      target->D[count++] = imRef(target->B, j, i).r;
-      target->D[count++] = imRef(target->B, j, i).g;
-      target->D[count++] = imRef(target->B, j, i).b;
+      target->D[count++] = imRef(target->A, j, i).r;
+      target->D[count++] = imRef(target->A, j, i).g;
+      target->D[count++] = imRef(target->A, j, i).b;
     }
   }
 }
