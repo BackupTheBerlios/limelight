@@ -43,14 +43,23 @@ else
 
 using namespace std;
 
-//prototypes
-void createParamsWin(int num);
-void openFile(char* fileName);
+/* ************************** PROTOTYPES ************************** */
+
+/* ******************** GLUT WINDOW CALL BACKS ******************** */
+//main window
 void mousefn ( int button, int updown, int x, int y );
-void dispfnWinA();
-void dispfnWinB();
 void displayfn();
 void keyb(unsigned char key, int x, int y);
+//window a
+void dispfnWinA();
+void mousefnWinA(int button, int updown, int x, int y);
+void motionfnWinA(int x, int y );
+//window b
+void dispfnWinB();
+
+/* ************************* PUI CALLBACKS ************************* */
+
+//this stuff needs some better names
 void openFileCB(puObject*); //this is for the open dialog box callback
 void openFile(char* fileName);
 void openCB(puObject*); //this is for the menu (open dialog box)
@@ -61,21 +70,16 @@ void exitProgram();
 void closeCB(puObject*);
 void saveCB(puObject*);
 void saveFileAsCB(puObject*);
-//pop up
-void go_away_callback(puObject *);
-void make_dialog(const char *txt);
-//end pop up
 void helpCB(puObject*);
 void aboutCB(puObject*);
 void saveAsCB(puObject*);
 void funcReload(puObject*);
+void createParamsWin(int num);
+//pop up
+void go_away_callback(puObject *);
+void make_dialog(const char *txt);
 
-//globals
-struct ltstr{ //used for the funcMap
-  bool operator()(const char* s1, const char* s2) const{
-    return strcmp(s1, s2) < 0;
-  }
-};
+/* **************************** GLOBALS *************************** */
 
 map<const char *, int, ltstr> funcMap; // this is here for the drop down menu, cuz it only return char* (never again pui, never again)
 puMenuBar *mainMenu;
@@ -86,11 +90,10 @@ vector<puObject*> paramsWinObjects;
 int curImg; 
 int curFunction; //set this when a function menu item is called
 dspWin* loadedImg; //this is the loaded image woohoo!
-int mainWinWidth, mainWinHeight; //these aren't used right now, but they should eventually be used to increase the size if the params are very large
 int winA, winB; //these will be the image windows, ROCK AND ROLL
 //vector<function> loadedFunctions is where all of our functions are stored, it is (sadly) declared in the dspWin.h file
 
-//stuff for zoom and pan
+//for zoom and pan
 int mouseOn = 0;
 int posWidth, posHeight;
 double newOffX=0.0;
@@ -106,9 +109,8 @@ puOneShot *ok;
 puDialogBox *popupBox = NULL ;
 puComboBox *funcItems;
 puOneShot *chngFuncBtn;
-//end pui globals (you're dumb pui)
 
-
+//etc
 #ifndef PARAM_S
 #define PARAM_S
 struct parameter {
@@ -116,6 +118,13 @@ struct parameter {
   string type;
 };
 #endif
+
+struct ltstr{ //used for the funcMap
+  bool operator()(const char* s1, const char* s2) const{
+    return strcmp(s1, s2) < 0;
+  }
+};
+
 
 void motionfn(int x, int y){
   puMouse(x, y);
@@ -598,7 +607,6 @@ int main ( int argc, char **argv ){
     }
   }
     
-
   //here's some performance improvements (WOW!, that's a LOT quicker)
   //i think that we only need to disable them in main (not for every window)
   //framebuffer ops we don't need
@@ -616,9 +624,7 @@ int main ( int argc, char **argv ){
   
 
   //intialize the limelight function params window
-  mainWinHeight = 250;
-  mainWinWidth = 400;
-  glutInitWindowSize ( mainWinHeight, mainWinWidth ) ;
+  glutInitWindowSize ( 250, 400 ) ;
   glutInit ( &argc, argv ) ;
   glutInitDisplayMode ( GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH ) ;
   mainWin = glutCreateWindow ("limelight" ) ;
