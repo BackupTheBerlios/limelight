@@ -31,20 +31,21 @@ else
  *make the open image "cancel" button work -- DONE ts (3/11)
  *'save'/ 'save as' needs to reload B -- DONE ts (3/11)
  *kill the glut menus -- DONE ts (3/11)
- *hmmmm... i think that we can totally get rid of c and d... (glPixelZoom(1.0,-1.0)), haha.
- *check out disabling gl states we dont use
+ *hmmmm... i think that we can totally get rid of c and d... (glPixelZoom(1.0,-1.0)), haha. except giving it a neg num doesnt work (WTF??)
+ *check out disabling gl states we dont use -- DONE ts (3/12)
 
  *other improvements: 
  *'close' menu item -- DONE ts (3/11)
  *add a printout from the stdout (this one is a little hard, we need to make it pipe the exec)
  *add a function remove feature...
  *rename func.fuk to configure something or other
- *rename enviro to limelight
+ *rename enviro to limelight -- DONE ts (3/12)
  *make the code readable
  *enable tab for inputs and return for buttons (possible?)
  *after adding a new function it should tell you to restart the program / if someone's feeling ambitious reload the functions
- *add keyboard shortcuts (cuz that's cool) -- kinda done, except cant get two keys at a time to work or ctrl
+ *add keyboard shortcuts (cuz that's cool) -- kinda done, except cant get ctrl or shift to work... (whats up with that?)
  *itd be cool to add errors and popups / disable menu items for when you cannot do things
+ *load the first function on the list into the window -- DONE ts (3/12)
 */
 
 using namespace std;
@@ -138,7 +139,6 @@ void mousefn ( int button, int updown, int x, int y ){
 }
 
 void dispfnWinA(){ 
-  glutSetWindow(winA);
   glClearColor( 0.9, 1.0, 0.9, 1.0 );
   glClear(GL_COLOR_BUFFER_BIT);
   
@@ -154,7 +154,6 @@ void dispfnWinA(){
 }
 
 void dispfnWinB(){
-  glutSetWindow(winB);
   glClearColor( 0.9, 1.0, 0.9, 1.0 );
   glClear(GL_COLOR_BUFFER_BIT);
   
@@ -182,6 +181,9 @@ void keyb(unsigned char key, int x, int y){
   puKeyboard(key, PU_DOWN); //so we need this on our keyboard thing to have that work....
   glutPostRedisplay();
  
+  if(glutGetModifiers() == GLUT_ACTIVE_ALT)
+    glutSetCursor(GLUT_CURSOR_DESTROY);
+
   //keyboard shortcuts
   int KEYCONST = 4; //this means alt key, ctrl is 2, but for some reason it doesnt work...
   
@@ -563,6 +565,23 @@ void funcReload(puObject*){
 }
 
 int main ( int argc, char **argv ){
+
+  //here's some performance improvements (WOW!, that's a LOT quicker)
+  //i think that we only need to disable them in main (not for every window)
+  //framebuffer ops we don't need
+  glDisable(GL_SCISSOR_TEST);
+  glDisable(GL_ALPHA_TEST);
+  glDisable(GL_STENCIL_TEST);
+  glDisable(GL_DEPTH_TEST);
+  glDisable(GL_DITHER);
+  glDisable(GL_INDEX_LOGIC_OP);
+  //gl states we don't need
+  glDisable(GL_TEXTURE_2D);
+  glDisable(GL_TEXTURE_3D);
+  glDisable(GL_LIGHTING);
+  glDisable(GL_FOG);
+
+
   mainWinHeight = 250;
   mainWinWidth = 400;
   glutInitWindowSize ( mainWinHeight, mainWinWidth ) ;
@@ -619,6 +638,9 @@ int main ( int argc, char **argv ){
   mainMenu->add_submenu ( "File", file_submenu, file_submenu_cb);
   mainMenu->add_submenu( "Help", help_submenu, help_submenu_cb);
   mainMenu->close ();
+
+  //load the first function on the list into the main window
+  createParamsWin(0);
 
   //the program was called with an image, so open it
   if(argc > 1)
