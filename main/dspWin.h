@@ -7,7 +7,7 @@
 
 #include <unistd.h>
 #include <sys/wait.h>
-//#include <iostream>
+
 
 /*
   This header holds the struct that will probably be put into a vector
@@ -51,6 +51,7 @@ void saveDspWin(dspWin *src, char *filePath);
 void deleteDspWin(dspWin *target);
 void callFunct(dspWin *target, int i, char **par);
 void load2B(dspWin *target, char *filePath);
+void revert2A(dspWin *target);
 
 //initialize dspWin from disk
 dspWin* initDspWin(char *filePath) {
@@ -175,6 +176,17 @@ void callFunct(dspWin *target, int i, char **par){
 void load2B(dspWin *target, char *filePath) {
   delete target->B;
   target->B = loadPPM(filePath);
+  return;
+}
+
+/*Function that changes B and C back into copy
+  gotten from A */
+
+void revert2A(dspWin *target) {
+  delete target->B;
+  delete[] target->C;
+  target->B = target->A->copy();
+  get_C_ready(target);
   return;
 }
 

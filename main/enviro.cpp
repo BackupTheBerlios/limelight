@@ -79,6 +79,22 @@ void keyb(unsigned char key, int x, int y){
   glutPostRedisplay();
 }
 
+//file menu -- revertCB
+void revertCB(puObject*){
+  revert2A(imgsOnScr[curImg]);
+  glutSetWindow(imgsOnScr[curImg]->winNum);
+  glNewList(curImg+1, GL_COMPILE);
+  glRasterPos2i(-1,-1 ); //what is up with this? 0,0 supposed to be lower left corner...
+  glDrawPixels(imgsOnScr[curImg]->A->width(), 
+	       imgsOnScr[curImg]->A->height(),
+	       GL_RGB,
+	       GL_UNSIGNED_BYTE,
+	       imgsOnScr[curImg]->C);
+  glEndList();
+  
+  cout << glutGetWindow() << "should be : " << imgsOnScr[curImg]->winNum << endl; 
+  glutPostRedisplay();
+
 //FILE MENU -- OPEN DIALOG BOX CALLBACK
 void openFileCB(puObject*){
   char* fileName;
