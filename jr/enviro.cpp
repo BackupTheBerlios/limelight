@@ -50,6 +50,9 @@ void addFuncPathCB(puObject*);
 void addFuncNameCB(puObject*);
 void addFuncFinalCB(puObject*);
 puOneShot *ok;
+puDialogBox *popupBox = NULL ;
+puComboBox *funcItems;
+puOneShot *funcOk;
 //end pui globas (you're dumb pui)
 
 #ifndef PARAM_S
@@ -202,7 +205,7 @@ void createParamsWin(int num){
   curFunction = num;
   
   puFrame *box;
-  box = new puFrame(0,0,252,324);
+  box = new puFrame(0,0,252,280);
   box->setColour(PUCOL_BACKGROUND, 1,1,1, 1);
   box->setStyle(PUSTYLE_BOXED);
   box->setBorderThickness(1);
@@ -211,7 +214,7 @@ void createParamsWin(int num){
   vector<pairBuff10>::const_iterator it = loadedFunctions[num].params.begin();
   
   //loop over the params vector, creating fun widgets as we go
-  int y=280; 
+  int y=250; 
   int x=100;
   while(it!=loadedFunctions[num].params.end()){
     //if it's an int make a box for it
@@ -371,14 +374,40 @@ void saveFileAsCB(puObject*){
   delete[] tmp;
 }
 
+//stuff for making a pop-up
+void go_away_callback ( puObject * ){
+  delete popupBox ;
+  popupBox = NULL ;
+}
+
+void make_dialog ( const char *txt ){
+  if ( popupBox != NULL )
+    return ;
+  
+  popupBox = new puDialogBox(25, 100);
+  {
+    puFrame *tmp1 = new puFrame(0, 0, 200, 125);
+    tmp1->setBorderThickness(3);
+    puText *tmp = new puText(10, 95);
+    tmp->setLabel(txt);
+
+    puOneShot *ok = new puOneShot (160, 10, "OK" ) ;
+    ok->makeReturnDefault(TRUE);
+    ok->setCallback(go_away_callback);
+  }
+  popupBox -> close  () ;
+  popupBox -> reveal () ;
+}
+//end pop up stuff
+
 //HELP MENU -- help callback
 void helpCB(puObject*){
-  cout << "help me!\n";
+  make_dialog("help? haha. not here.\n");
 }
 
 //HELP MENU -- about callback
 void aboutCB(puObject*){
-  cout << "about everything\n";
+  make_dialog("here's some cool stuff\nabout the program\n");
 }
 
 //FILE MENU -- SAVE AS CALLBACK
@@ -389,9 +418,14 @@ void saveAsCB(puObject*){
   openDialogBox->setCallback(saveFileAsCB);
 }
 
+//FUNC RELOAD CALLBACK
+void funcReload(puObject*){
+  
+}
+
 int main ( int argc, char **argv ){
   mainWinHeight = 250;
-  mainWinWidth = 350;
+  mainWinWidth = 400;
   glutInitWindowSize ( mainWinHeight, mainWinWidth ) ;
   glutInit ( &argc, argv ) ;
   glutInitDisplayMode ( GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH ) ;
@@ -405,6 +439,7 @@ int main ( int argc, char **argv ){
   puInit();
   puDisplay();  
 
+  //file menu 
   char **file_submenu = new (char*)[10];
   file_submenu[7] = "Open";
   file_submenu[6] = "-------";
@@ -416,6 +451,14 @@ int main ( int argc, char **argv ){
   file_submenu[0] = "Exit";
   puCallback file_submenu_cb [8] = { exitCB, NULL, saveAsCB, saveCB, NULL, addFuncCB, NULL, openCB};
 
+  //help submenu -- ok more screwed up pui stuff, these menus won't work if you have an odd number of items...
+  char **help_submenu = new (char*)[4];
+  help_submenu[2] = "Help";
+  help_submenu[1] = "---";
+  help_submenu[0] = "About";
+  puCallback help_submenu_cb [4] = {aboutCB, NULL, helpCB};
+
+  
   //read in functions and make a glut style menu
   createMenu("funct.fuk", loadedFunctions); //load 'er up
   vector<function>::const_iterator it = loadedFunctions.begin();
@@ -428,27 +471,39 @@ int main ( int argc, char **argv ){
   }
 
   glutAttachMenu(GLUT_RIGHT_BUTTON); //end menu creation
+  
+
+  //this will be good shortly
+  //read the functions in, add them to the list array
+  createMenu("funct.fuk", loadedFunctions); //load 'er up
+  it = loadedFunctions.begin();
+  i=0;
+  
+  char **functionList = new (char*)[loadedFunctions.size()+1]; 
+  while(it != loadedFunctions.end()){
+    functionList[i++] = (char*)it->name;
+    it++;
+  }
+  functionList[loadedFunctions.size()] = NULL;
+  
+  //ok, here's the functions shit, so you can change them
+  funcItems = new puComboBox( 15, 335, 215, 360, functionList, FALSE ) ;
+  
+  funcOk = new puOneShot(15, 300, "Change");
+  funcOk->setBorderThickness(2);
+  //funcOk->setCallback(funcReload);
+  
 
   //draw a line for the top of the screen
-  puFrame *top =  new puFrame(0,350,250,326.5);
+  puFrame *top =  new puFrame(0,375,250,401.5);
   top->setColour(PUCOL_BACKGROUND, 1,1,1,1);
   top->setStyle(PUSTYLE_BOXED);
   top->setBorderThickness(1);  
 
   //make the menu
- 
-  //help submenu
-  char **help_submenu = new (char*)[5];
-  help_submenu[3] = "Help";
-  help_submenu[2] = "-------";
-  help_submenu[1] = "About";
-  help_submenu[0] = NULL;
-  puCallback help_submenu_cb [4] = {NULL, aboutCB, NULL, helpCB};
 
   mainMenu = new puMenuBar ( -1 );
   mainMenu->add_submenu ( "File", file_submenu, file_submenu_cb );
-  //TO DO: this menu won't display and I don't know why (hmmm, there's a pattern here, of things that are happening for reasons i do 
-  //not understand, and defy rules of logic, i think that this must have something to do with lack of sleep
   mainMenu->add_submenu( "Help", help_submenu, help_submenu_cb);
   mainMenu->close ();
 
