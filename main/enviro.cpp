@@ -25,21 +25,29 @@ using namespace std;
 puMenuBar *mainMenu;
 puFileSelector *openDialogBox;
 int mainWin;
-vector<puObject*> paramsWinObjects;
+vector<puObject*> paramsWinObjects; 
 puDialogBox *paramsWin; //this is an ugly hack for now
 vector<dspWin*> imgsOnScr; //this is the images currently on the screen
-int curImg;
+int curImg; //REVISION: MARCH 7th -- curImg is now a glutWindowID PLEASE NOTE THIS, these start at one and go up
+//at the moment we're not using win 1, which is the main window
 int w2; // tsk, tsk, so messy, we'll take care of this soon
 int curFunction; //set this when a function menu item is called
+int *glImgLists; //this is for the gl list call back, do this later in a better way
 
 /********/
-
-
 
 void motionfn ( int x, int y )
 {
   puMouse ( x, y ) ;
   glutPostRedisplay () ;
+}
+
+void enterLeaveWin(int status){
+  if(status==GLUT_VISIBLE){ //means mouse is on the win 
+    curImg = glutGetWindow() - 2; //-2 cuz windows start at 1 and 1 is main win
+    cout << "curImg is now: " << curImg << endl;
+    cout << "winID: " << imgsOnScr[curImg]->winNum << endl;
+  }
 }
 
 void mousefn ( int button, int updown, int x, int y )
@@ -60,6 +68,21 @@ void displayfn ()
     //cout << "does this get called?\n";
     glCallList(curImg+1);
   }
+  
+  //here's a trial rock it please!
+  /*  if(!imgsOnScr.empty() && glutGetWindow() == imgsOnScr[curImg]->winNum){
+    //cout << "does this get called?\n";
+    glListBase(1);
+    //ok make the lists from the imgsOnScr vector...
+    //for now, this doesnt really work cuz if you close an img it still has it
+    int i=0;
+    glImgLists = new int[imgsOnScr.size()];
+    while(i<imgsOnScr.size()){
+      glImgLists[i] = i;
+      i++;
+    }
+    glCallLists(imgsOnScr.size(), GL_INT, glImgLists);
+    }*/
 
   /*the above needs to be changed to lists of display lists... check it out below
   it's not really intuitive
@@ -102,14 +125,15 @@ void openFileCB(puObject*){
   openDialogBox->getValue(&fileName);
   
   imgsOnScr.push_back(initDspWin(fileName)); //from dspWin.h
-  
-  curImg = imgsOnScr.size() - 1;
 
+  curImg = imgsOnScr.size() - 1;
+  
   //display it??
   glutInitWindowSize(imgsOnScr[curImg]->A->width(), imgsOnScr[curImg]->A->height());
   glutInitWindowPosition(0,0);   
   imgsOnScr[curImg]->winNum = glutCreateWindow(fileName);
- 
+  glutEntryFunc(enterLeaveWin);
+  
   //lets go man, out of the frying pan
   
   //OK THIS WORKS NICE FOR A SINGLE FILE
@@ -117,6 +141,7 @@ void openFileCB(puObject*){
   //FOR MULTIPLE FILES
   
   glNewList(curImg+1, GL_COMPILE);
+//glutSetWindow(curImg+2);
   glRasterPos2i(-1,-1 ); //what is up with this? 0,0 supposed to be lower left corner...
   glDrawPixels(imgsOnScr[curImg]->A->width(), 
 	       imgsOnScr[curImg]->A->height(),
@@ -144,7 +169,7 @@ void openFileCB(puObject*){
 
 //FILE MENU -- OPEN CALLBACK
 void openCB(puObject*){
-  openDialogBox = new puFileSelector(50, 50, "", "Please select a file");
+  openDialogBox = new puFileSelector(50, 50, 300, 450, "", "Please select an image");
   openDialogBox->setInitialValue(" ");
   openDialogBox->setChildBorderThickness(PUCLASS_INPUT, 1);
   openDialogBox->setCallback(openFileCB);
@@ -182,9 +207,7 @@ void paramsWinOKCB(puObject*){
   params[paramsWinObjects.size()+3] = '\0';
   
   callFunct(imgsOnScr[curImg], curFunction, params); //from dspWin.h
-  //callFunct runs the function on dspWin, deletes the tmp files, displays the result, DAMN
-
-  
+  //callFunct runs the function on dspWin, deletes the tmp files, displays the result, DAMN that's a lot of work
 
   glutSetWindow(imgsOnScr[curImg]->winNum);
  

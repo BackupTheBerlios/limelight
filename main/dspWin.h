@@ -60,7 +60,7 @@ dspWin* initDspWin(char *filePath) {
   dspWin *tmp = new dspWin;
   tmp->path = new char[50];
   tmp->path = filePath;
-  
+ 
   /*this won't work unless we change Pedro's  pnmfile.h
     so that it will read any image without caring if they are pgm, ppm, etc.
     ASK HIM ABOUT IT */
