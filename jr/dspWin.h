@@ -263,8 +263,6 @@ void callFunct(dspWin *target, int i, char **par){
   case -1: //error
     exit(-1);
   case 0: //0 means a child process
-    //test - REMOVE THIS
-    //execv("/home/vegan/seg", par);
     execv(loadedFunctions[i].path, par);
   default:
     died = wait(&status);
