@@ -598,8 +598,8 @@ void callFuncCB(puObject*){
   }
 
   params[0] = loadedFunctions[curFunction].name;
-  params[paramsWinObjects.size()+1] = "/tmp/tmp.fuk"; //infile -- this will be trashed
-  params[paramsWinObjects.size()+2] ="/tmp/tmp2.fuk"; //outfile -- this will be trashed
+  params[paramsWinObjects.size()+1] = "/tmp/tmp.lime"; //infile -- this will be trashed
+  params[paramsWinObjects.size()+2] ="/tmp/tmp2.lime"; //outfile -- this will be trashed
   params[paramsWinObjects.size()+3] = '\0';
 
   glutSetCursor(GLUT_CURSOR_WAIT); //make a cool wait cursor for while the function is running

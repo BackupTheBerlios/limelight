@@ -9,32 +9,22 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-using namespace std;
 /*
-  This header holds the struct that will probably be put into a vector
+  This header holds the struct that will be put into a vector
   of all currently loaded images.  A dspWin is the structure of:
-  Stage A : Image X as it is currently on disk
-  Stage B : Unsaved modifications of Stage A
+  Stage A : Image X as it is currently on disk - Will be displayed in "Original" window
+  Stage B : Copy of Stage A that will be edited by 
   Stage C : The data in B as OpenGL needs it
-  Stage D : The date in A as OpenGL needs it
+  Stage D : The data in A as OpenGL needs it
 */
 
-/*
-  Modifications:
-  Update Pedro's image class to:
-  1) Not be templatized
-  2) Have a constructor that opens from a filePath
-  3) Have a copy constructor
-  4) ???
 
-  Deal with unpacking stuff for PBM files into Stage C
+/****************************Globals******************/
 
-*/
-
-vector<function> loadedFunctions; //this is read in from the funct.fuk file UGLINESS!!!
+//vector of functions, as defined in functRead.h, needed for menu and for forking below
+vector<function> loadedFunctions; 
 
 //This is the struct for holding the parts of the image process
-
 struct dspWin {
   char *path;
   image* A;  //in image
@@ -44,7 +34,11 @@ struct dspWin {
   int winNum;  
 };
 
-//prototypes
+/************************End Globals**************/
+
+
+
+/***********************Prototypes***************/
 dspWin* initDspWin(char *filePath);
 void get_C_ready (dspWin *target);
 void get_D_ready (dspWin *target);
@@ -60,27 +54,31 @@ void getCHelpPGM(dspWin *target);
 void getDHelpPPM(dspWin *target);
 void getDHelpPGM(dspWin *target);
 
+/********************End Prototypes*************/
 
 
-//initialize dspWin from disk
+
+/********************Function definitions******************/
+
+//initialize dspWin from disk, using specified path
 dspWin* initDspWin(char *filePath) {
   dspWin *tmp = new dspWin;
   tmp->path = new char[70];
 
+  //loop to copy filePath into dspWin's path
   for (int i = 0; filePath[i]!='\0'; i++)
     tmp->path[i] = filePath[i];
 
-  /*check to see if image is ppm or pgm*/
-  //5 is raw pgm, 6 is raw ppm, ...
+  //initialize C and D to NULL
+  tmp->C=0; tmp->D=0;
 
   //open file
   ifstream input(filePath, ios::in);
-
-  //check second character (P_)
+  
+  //check second character (P_) - if it's 6, then this is a ppm, if 5, then pgm
   input.seekg(1, ios::beg);
   char c = input.peek();
   input.close();
-
   switch (c) {
   case '6' :
     tmp->A = loadPPM(filePath);
@@ -92,32 +90,30 @@ dspWin* initDspWin(char *filePath) {
   
   //tmp B is initially a copy of A
   tmp->B = tmp->A->copy();
-
-  //prepares C in GL format
   
+  //prepares C in GL format
   get_C_ready(tmp);
+  
+  //prepares D in GL format
   get_D_ready(tmp);
   return tmp;
 }
 
-
-
 //function that moves data in B to GL format in C
 void get_C_ready (dspWin *target) {
+  //get height, width, number of pixels
   int width = target->B->width();
   int height = target->B->height();
-  int pixels = target->B->pixelCount;
-
+  
   //in case C is already initialized, delete it's value
-  //delete[] target->C;
-
-  //for RGB, it is three bigger
+  if (target->C!=0) delete[] target->C;
+  
+  //All images for GL are RGB, so we need 3*pixels to store data
   target->C = new unsigned char[width*height*3];
-    
-  if (pixels==3)
-    getCHelpPPM(target);
-  else
-    getCHelpPGM(target);
+  
+  //check if image is already RGB or not
+  if (target->A->isRGB) getCHelpPPM(target);
+  else getCHelpPGM(target);
   return;
 }
 
@@ -125,30 +121,31 @@ void get_C_ready (dspWin *target) {
 
 //function that moves data in B to GL format in D
 void get_D_ready (dspWin *target) {
+  //
   int width = target->B->width();
   int height = target->B->height();
-
-  //in case C is already initialized, delete it's value
-  //delete[] target->C;
-
-  //for RGB, it is three bigger
+  
+  //in case D is already initialized, delete it's value
+  if (target->D!=0) delete[] target->C;
+  
+  //All images for GL are RGB, so we need 3*pixels to store data
   target->D = new unsigned char[width*height*3];
-
-  if (target->A->isRGB) {
-    getDHelpPPM(target);
-    return;
-  }
-  else
-    getDHelpPGM(target);
+  
+  //check if image is already RGB
+  if (target->A->isRGB) getDHelpPPM(target);
+  else getDHelpPGM(target);
   return;
 }
 
-
+//Loads PPM image into C
 void getCHelpPPM(dspWin *target) {
+  //counter variables  
   int width = target->B->width();
   int height = target->B->height();
   int count=0;  //counter for loop
   int loc = 0; //counter
+  
+  //loop to load data
   for (int i=height-1; i>=0; i--) {
     loc = i*width*3;
     for (int j=0; j<width*3; j++)
@@ -157,11 +154,15 @@ void getCHelpPPM(dspWin *target) {
   return;
 }
 
+//Loads PGM image into C
 void getCHelpPGM(dspWin *target) {
+  //counter variables
   int width = target->B->width();
   int height = target->B->height();
   int count = 0;  //counter for loop
   char helper;
+  
+  //loop to load data - throws greyscale value of pixel into R, G, and B
   for (int i=height-1; i>=0; i--) {
     for (int j=0; j<width; j++) {
       helper = target->B->data[(i*width)+j];
@@ -173,11 +174,15 @@ void getCHelpPGM(dspWin *target) {
   return;
 }
 
+//Loads PPM image into D
 void getDHelpPPM(dspWin *target) {
+  //counter variables
   int width = target->A->width();
   int height = target->A->height();
   int count = 0;  //counter for loop
   int loc = 0; //counter
+  
+  //loop to load data
   for (int i=height-1; i>=0; i--) {
     loc = i*width*3;
     for (int j=0; j<width*3; j++)
@@ -186,11 +191,15 @@ void getDHelpPPM(dspWin *target) {
   return;
 }
 
+//Loads PGM image into D
 void getDHelpPGM(dspWin *target) {
+  //counter variables
   int width = target->A->width();
   int height = target->A->height();
   int count = 0;  //counter for loop
   unsigned char helper;
+  
+  //loop to load data - throws greyscale value of pixel into R, G, and B
   for (int i=height-1; i>=0; i--) {
     for (int j=0; j<width; j++) {
       helper = target->A->data[(i*width)+j];
@@ -203,15 +212,13 @@ void getDHelpPGM(dspWin *target) {
 }
 
 
-//function that saves B, and loads B into A
-//WHAT IS PEDRO'S VLIB THING IN save_image (in pnmfile.h)?
+//function that saves B
 void saveDspWin(dspWin *src, char *filePath) {
   if (src->A->isRGB)
     savePPM(src->B, filePath);
   else
     savePGM(src->B, filePath);
-  delete src->A;
-  src->A = src->B->copy();
+  return;
 }
 
 //function that saves B to same location as A, then loads image
@@ -227,9 +234,9 @@ void saveDspWin(dspWin *src) {
 //function that saves B as tmp
 void saveTMP(dspWin *src) {
   if (src->A->isRGB)
-    savePPM(src->A, "/tmp/tmp.fuk");
+    savePPM(src->A, "/tmp/tmp.lime");
   else
-    savePGM(src->A, "/tmp/tmp.fuk");
+    savePGM(src->A, "/tmp/tmp.lime");
   return;
 }
 
@@ -242,7 +249,7 @@ void deleteDspWin(dspWin *target) {
 }
 
 /*Calls function on B*/
-//file is stored at ./tmp.fuk (in) and tmp2.fuk (out)
+//file is stored at ./tmp.lime (in) and tmp2.lime (out)
 //these are imbedded in params
 void callFunct(dspWin *target, int i, char **par){
   //save temporary copy
@@ -251,7 +258,7 @@ void callFunct(dspWin *target, int i, char **par){
   //forking
   int pid;
   int died, status; //status is set by the call to exec
-
+  
   switch(pid=fork()){
   case -1: //error
     exit(-1);
@@ -263,27 +270,23 @@ void callFunct(dspWin *target, int i, char **par){
   //end fork
 
   //load file to B
-  load2B(target, "/tmp/tmp2.fuk");
+  load2B(target, "/tmp/tmp2.lime");
 
-  //delete tmp files - not working
+  //delete tmp files
   //FORK
   char* temp[4];
   temp[0] = "rm";
-  temp[1] = "/tmp/tmp.fuk";
-  temp[2] = "/tmp/tmp2.fuk";
+  temp[1] = "/tmp/tmp.lime";
+  temp[2] = "/tmp/tmp2.lime";
   temp[3] = '\0';
-
+  
   switch(pid=fork()){
   case -1: //error
-    cout << "cannot fork\n";
     exit(-1);
   case 0: //0 means a child process
-    cout << "forking... \n" << "pid: " << pid << endl;
     execv("/bin/rm", temp);
   default:
-    cout << "i'm the parent\n"<<  "pid: " << pid << endl;;
     wait(&status);
-    cout << "completed ok \n";
   }
   //END FORK
 
@@ -305,13 +308,13 @@ void load2B(dspWin *target, char *filePath) {
 /*Function that changes B and C back into copy
   gotten from A */
 /*
-void revert2A(dspWin *target) {
+  void revert2A(dspWin *target) {
   delete target->B;
   delete[] target->C;
   target->B = target->A->copy();
   get_C_ready(target);
   return;
-}
+  }
 */
 
 #endif
