@@ -21,6 +21,7 @@ using namespace std;
 
 vector<function> loadedFunctions; //this is read in from the funct.fuk file
 puMenuBar *mainMenu;
+puFileSelector *openDialogBox;
 int mainWin;
 
 /********/
@@ -54,6 +55,29 @@ void keyb(unsigned char key, int x, int y){
   glutPostRedisplay();
 }
 
+//FILE MENU -- OPEN DIALOG BOX CALLBACK
+void openFileCB(puObject*){
+  char* fileName;
+  openDialogBox->getValue(&fileName);
+  
+  //the following note was in a pui ex file, it's probably important
+
+  //NOTE: interface creation/deletion must be nested
+  //the old interface must be deleted *before* a new one is created
+  //otherwise the interface stack will be messed up
+  
+  puDeleteObject(openDialogBox);
+  
+  cout << "open the file: " << fileName << endl;
+}
+
+//FILE MENU -- OPEN CALLBACK
+void openCB(puObject*){
+  openDialogBox = new puFileSelector(50, 50, "./", "Please select a file");
+  openDialogBox->setChildBorderThickness(PUCLASS_INPUT, 1);
+  openDialogBox->setCallback(openFileCB);
+}
+
 void exitCB(puObject*){ //work on this later, we need to pass all of this shyte
   glutDestroyWindow(mainWin);
   exit(0);
@@ -80,7 +104,7 @@ int main ( int argc, char **argv )
   file_submenu[1] = "Save";
   file_submenu[0] = "Exit";
 
-  puCallback file_submenu_cb [3] = { exitCB, NULL, NULL};
+  puCallback file_submenu_cb [3] = { exitCB, NULL, openCB};
 
   //here's where it a-goes down
   createMenu("funct.fuk", loadedFunctions); //load 'er up
@@ -98,13 +122,12 @@ int main ( int argc, char **argv )
   while(i<loadedFunctions.size())
     functSubmenuCB[i++] = NULL;
   //end the a-going-down-ness
-  
+
   mainMenu = new puMenuBar ( -1 );
   mainMenu->add_submenu ( "File", file_submenu, file_submenu_cb ) ;
   mainMenu->add_submenu ( "Functions", functSubmenu, functSubmenuCB);
   mainMenu->close ();
 
-  
   glutMainLoop () ;
 
   return 0 ;
