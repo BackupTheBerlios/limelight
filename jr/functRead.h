@@ -55,6 +55,9 @@ void createMenu(char *fileName, vector<function> &loadedFunctions){
     fileStream.unget();
     */
 
+    if(fileStream.peek() == '\n')
+      fileStream.ignore();
+
     while(fileStream.get() == '#'){
       fileStream.ignore(512, '\n'); //throw out the line (512 is arbitrary, we just ignore until we get to newline)
     }
