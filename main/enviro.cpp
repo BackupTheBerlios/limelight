@@ -54,12 +54,20 @@ void displayfn ()
 
   puDisplay () ;
   
-  //OK WORK
-  
+  //this displays the images on the screen
   if(!imgsOnScr.empty() && glutGetWindow() == imgsOnScr[curImg]->winNum){
     //cout << "does this get called?\n";
     glCallList(curImg+1);
   }
+
+  /*the above needs to be changed to lists of display lists... check it out below
+  it's not really intuitive
+  glListBase(0);
+  GL_INT lists[] = {1,1,3,5};
+  glCallLists(4,GL_INT,lists);
+  ok, so that code calls the lists 1, 2, 5 and 10 that were created using glNewList
+  just like normal
+  */
   
   glutSwapBuffers () ;
   glutPostRedisplay () ;
@@ -155,6 +163,13 @@ void paramsWinOKCB(puObject*){
   params[paramsWinObjects.size()+2] ="./tmp2.fuk"; //outfile -- this will be trashed
   params[paramsWinObjects.size()+3] = '\0';
   
+  callFunct(imgsOnScr[curImg], curFunction, params); //from dspWin.h
+  
+  //callFunct runs the function on dspWin, deletes the tmp files, displays the result, DAMN
+
+  //make it ready for the next kid
+  paramsWinObjects.clear();
+  delete paramsWin;
 }
 
 //FUNCTION MENU -- CALLBACK
@@ -259,7 +274,7 @@ int main ( int argc, char **argv )
   glutAttachMenu(GLUT_RIGHT_BUTTON);
   //end menu creation
 
-  /*DOESN'T WORK, HOPEFULL FIX LATER
+  /*DOESN'T WORK, HOPEFULLY FIX LATER
   //here's where it a-goes down
   createMenu("funct.fuk", loadedFunctions); //load 'er up
   
