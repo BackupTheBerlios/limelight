@@ -5,7 +5,7 @@
 #include "pnmfile.h"
 #endif
 
-
+#include <fstream>
 #include <unistd.h>
 #include <sys/wait.h>
 
@@ -45,18 +45,20 @@ struct dspWin {
   image<rgb>* B;  //out image
   unsigned char *C;  //in image in gl form
   unsigned char *D;  //out image in gl form
+  bool isRGB;  //true if RGB, false if greyscale
 };
 
 //prototypes
-void get_C_ready (dspWin *target);
-void get_D_ready (dspWin *target);
+void get_C_readyPPM (dspWin *target);
+void get_D_readyPPM (dspWin *target);
 dspWin* initDspWin(char *filePath);
-void saveDspWin(dspWin *src, char *filePath);
 void deleteDspWin(dspWin *target);
 void callFunct(dspWin *target, int i, char **par);
 void load2B(dspWin *target, char *filePath);
 void revert2A(dspWin *target);
 void saveDspWin(dspWin *src);
+void saveDspWin(dspWin *src, char *filePath);
+void 
 
 //initialize dspWin from disk
 dspWin* initDspWin(char *filePath) {
@@ -66,27 +68,43 @@ dspWin* initDspWin(char *filePath) {
 
   for (int i = 0; filePath[i]!='\0'; i++)
     tmp->path[i] = filePath[i];
-  //tmp->path = filePath;
-  
 
   /*this won't work unless we change Pedro's  pnmfile.h
     so that it will read any image without caring if they are pgm, ppm, etc.
     ASK HIM ABOUT IT */
 
-  /*For now (3/5/05), this is just going to assume the image is a PPM*/
+  /*check to see if image is ppm or pgm*/
+  //5 is raw pgm, 6 is raw ppm, ...
 
-  //A is an image loaded from filePath
-  tmp->A = loadPPM(filePath);
-  
+  /* Add more image types later? */
+
+  //open file
+  ifstream input(filePath, ios::in);
+
+  //check second character (P_)
+  input.seekg(1, ios::beg);
+  char c = input.peek();
+  switch (c) {
+  case '6' :
+    tmp->isRGB=true;
+    tmp->A = loadPPM(filePath);
+    break;
+  case '5' :
+    tmp->isRGB=false;
+    tmp->A = loadPGM(filePath);
+    break;
+  }
   //tmp B is initially a copy of A
   tmp->B = tmp->A->copy();
 
   //prepares C in GL format
   
-  get_C_ready(tmp);
-  get_D_ready(tmp);
+  get_C_readyPPM(tmp);
+  get_D_readyPPM(tmp);
   return tmp;
 }
+
+
 
 //function that moves data in B to GL format in C
 void get_C_ready (dspWin *target) {
@@ -102,10 +120,23 @@ void get_C_ready (dspWin *target) {
 
   //since we want to start at bottom, i starts at height-1, goes to 0
   for (int i=height-1; i>=0; i--) {
-    for (int j=0; j<width; j++) {
-      target->C[count++] = imRef(target->B, j, i).r;
-      target->C[count++] = imRef(target->B, j, i).g;
-      target->C[count++] = imRef(target->B, j, i).b;
+    /*if rgb, get all three colors*/
+    if (target->isRGB) {
+      for (int j=0; j<width; j++) {
+	target->C[count++] = imRef(target->B, j, i).r;
+	target->C[count++] = imRef(target->B, j, i).g;
+	target->C[count++] = imRef(target->B, j, i).b;
+      }
+    }
+    /*otherwise, get color and throw it into r, g, and b*/
+    else {
+      char helper;
+      for (int j=0; j<width; j++) {
+	helper = imRef(target->B, j, i);
+	target->C[count++] = helper;
+	target->C[count++] = helper;
+	target->C[count++] = helper;
+      }
     }
   }
 }
@@ -124,34 +155,54 @@ void get_D_ready (dspWin *target) {
 
   //since we want to start at bottom, i starts at height-1, goes to 0
   for (int i=height-1; i>=0; i--) {
-    for (int j=0; j<width; j++) {
-      target->D[count++] = imRef(target->A, j, i).r;
-      target->D[count++] = imRef(target->A, j, i).g;
-      target->D[count++] = imRef(target->A, j, i).b;
+    if (target->isRGB) {
+      for (int j=0; j<width; j++) {
+	target->C[count++] = imRef(target->B, j, i).r;
+	target->C[count++] = imRef(target->B, j, i).g;
+	target->C[count++] = imRef(target->B, j, i).b;
+      }
     }
+    /*otherwise, get color and throw it into r, g, and b*/
+    else {
+      char helper;
+      for (int j=0; j<width; j++) {
+	helper = imRef(target->B, j, i);
+	target->D[count++] = helper;
+	target->D[count++] = helper;
+	target->D[count++] = helper;
+      }
+    }  
   }
+}
 }
 
 //function that saves B, and loads B into A
 //WHAT IS PEDRO'S VLIB THING IN save_image (in pnmfile.h)?
 void saveDspWin(dspWin *src, char *filePath) {
-  savePPM(src->B, filePath);
-  cout <<"file saved succesfully\n";
+  if (src->isRGB)
+    savePPM(src->B, filePath);
+  else
+    savePGM(src->B, filePath);
   delete src->A;
   src->A = src->B->copy();
 }
 
 //function that saves B to same location as A, then loads image
 void saveDspWin(dspWin *src) {
-  savePPM(src->B, src->path);
-  cout <<"file saved succesfully\n";
+  if (src->isRGB)
+    savePPM(src->B, src->path);
+  else
+    savePGM(src->B, src->path);
   delete src->A;
   src->A = src->B->copy();
 }
 
 //function that saves B as tmp
 void saveTMP(dspWin *src) {
-  savePPM(src->B, "/tmp/tmp.fuk");
+  if (src->isRGB)
+    savePPM(src->B, "/tmp/tmp.fuk");
+  else
+    savePGM(src->B, "/tmp/tmp.fuk");
   return;
 }
 
@@ -219,7 +270,10 @@ void callFunct(dspWin *target, int i, char **par){
 //Function that loads file into B
 void load2B(dspWin *target, char *filePath) {
   delete target->B;
-  target->B = loadPPM(filePath);
+  if (target->isRGB)
+    target->B = loadPPM(filePath);
+  else
+    target->B = loadPGM(filePath);
   return;
 }
 
