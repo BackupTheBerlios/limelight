@@ -278,7 +278,8 @@ void exitCB(puObject*){ //work on this later, we need to pass all of this shyte
 
 //FILE MENU -- SAVE CALLBACK
 void saveCB(puObject*){
-  saveDspWin(imgsOnScr[curImg], imgsOnScr[curImg]->path);
+  //saveDspWin(imgsOnScr[curImg], imgsOnScr[curImg]->path);
+  cout << imgsOnScr[curImg]->path;
 }
 
 int main ( int argc, char **argv )
