@@ -19,7 +19,7 @@ CFLAGS = $(COMPILERFLAGS) $(INCDIR)
 #FOR LINUX
 LIBRARIES = -lm -lX11 -lglut -lstdc++ -lplibpu -lplibfnt -lplibul
 
-all: complex simple widgets
+all: enviro
 
 complex: complex.cxx
 	$(CC) $(CFLAGS) $(FRAMEWORK) -o complex complex.cxx $(LIBDIR) $(LIBRARIES)

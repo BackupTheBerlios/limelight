@@ -21,6 +21,22 @@ else
 #include "dspWin.h" // a much better job of naming is going on here
 #include "functionFileCreator.h"
 
+
+/******************the great to do list: ****************
+
+ *make limelight take in an environmental arg to open an img
+ *make menus work
+ *make drop down function changer work
+ *make add function drop down work
+ *make the open image "cancel" button work
+
+ *other improvements: 
+ *add a printout from the stdout
+ *rename func.fuk to configure something or other
+ *rename enviro to limelight
+
+ */
+
 using namespace std;
 
 //prototypes
@@ -80,6 +96,7 @@ void dispfnWinA(){
   glClearColor( 0.9, 1.0, 0.9, 1.0 );
   glClear(GL_COLOR_BUFFER_BIT);
   
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glRasterPos2i(-1,-1 );
   glDrawPixels(loadedImg->A->width(), 
 	       loadedImg->A->height(),
@@ -95,6 +112,7 @@ void dispfnWinB(){
   glClearColor( 0.9, 1.0, 0.9, 1.0 );
   glClear(GL_COLOR_BUFFER_BIT);
   
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glRasterPos2i(-1,-1 );
   glDrawPixels(loadedImg->A->width(), 
 	       loadedImg->A->height(),
@@ -123,6 +141,10 @@ void keyb(unsigned char key, int x, int y){
 void openFileCB(puObject*){
   char* fileName;
   openDialogBox->getValue(&fileName);
+
+  //check to see if the cancel button was hit (this is ugly)
+  if(*(((string)fileName).last()) == '/')
+    return;
   
   //check to see if we've already go an image, if so delete it
   if(loadedImg != NULL){
@@ -155,7 +177,7 @@ void openFileCB(puObject*){
 //FILE MENU -- OPEN CALLBACK
 void openCB(puObject*){
   openDialogBox = new puFileSelector(0, 0, 252, 324, "", "Please select an image");
-  openDialogBox->setInitialValue(" "); //make this pretty later
+  openDialogBox->setInitialValue(""); //make this pretty later
   openDialogBox->setChildBorderThickness(PUCLASS_INPUT, 1);
   openDialogBox->setCallback(openFileCB);
 }
@@ -439,26 +461,6 @@ int main ( int argc, char **argv ){
   puInit();
   puDisplay();  
 
-  //file menu 
-  char **file_submenu = new (char*)[10];
-  file_submenu[7] = "Open";
-  file_submenu[6] = "-------";
-  file_submenu[5] = "Add new function";
-  file_submenu[4] = "-------";
-  file_submenu[3] = "Save";
-  file_submenu[2] = "Save As";
-  file_submenu[1] = "-------";
-  file_submenu[0] = "Exit";
-  puCallback file_submenu_cb [8] = { exitCB, NULL, saveAsCB, saveCB, NULL, addFuncCB, NULL, openCB};
-
-  //help submenu -- ok more screwed up pui stuff, these menus won't work if you have an odd number of items...
-  char **help_submenu = new (char*)[4];
-  help_submenu[2] = "Help";
-  help_submenu[1] = "---";
-  help_submenu[0] = "About";
-  puCallback help_submenu_cb [4] = {aboutCB, NULL, helpCB};
-
-  
   //read in functions and make a glut style menu
   createMenu("funct.fuk", loadedFunctions); //load 'er up
   vector<function>::const_iterator it = loadedFunctions.begin();
@@ -470,9 +472,8 @@ int main ( int argc, char **argv ){
     it++;
   }
 
-  glutAttachMenu(GLUT_RIGHT_BUTTON); //end menu creation
-  
-
+  glutAttachMenu(GLUT_RIGHT_BUTTON); //end menu creation  
+ 
   //this will be good shortly
   //read the functions in, add them to the list array
   createMenu("funct.fuk", loadedFunctions); //load 'er up
@@ -493,20 +494,40 @@ int main ( int argc, char **argv ){
   funcOk->setBorderThickness(2);
   //funcOk->setCallback(funcReload);
   
-
   //draw a line for the top of the screen
   puFrame *top =  new puFrame(0,375,250,401.5);
   top->setColour(PUCOL_BACKGROUND, 1,1,1,1);
   top->setStyle(PUSTYLE_BOXED);
   top->setBorderThickness(1);  
 
+  //help submenu -- ok more screwed up pui stuff, these menus won't work if you have an odd number of items...
+  /*  char **help_submenu = new (char*)[4];
+  for(int i=0;i<3;i++){
+    help_submenu[i] = new char[30];
+  }
+  help_submenu[2] = "Help";
+  help_submenu[1] = "---";
+  help_submenu[0] = "About";
+
+  int l =0;
+  while(l<3)
+    cout << help_submenu[l++] <<endl;
+  */
+
+  char *help_submenu[] = {"Help", "-----", "About", NULL};
+  puCallback help_submenu_cb [] = {helpCB, NULL, aboutCB, NULL};
+
+  //file menu 
+  char *file_submenu[] = {"Exit", "-----", "Save as", "Save", "-----", "Add new function", "-----", "Open", NULL};
+  puCallback file_submenu_cb [] = { exitCB, NULL, saveAsCB, saveCB, NULL, addFuncCB, NULL, openCB, NULL};
+  
   //make the menu
-
   mainMenu = new puMenuBar ( -1 );
-  mainMenu->add_submenu ( "File", file_submenu, file_submenu_cb );
+  mainMenu->add_submenu ( "File", file_submenu, file_submenu_cb);
   mainMenu->add_submenu( "Help", help_submenu, help_submenu_cb);
+  cout << "after help menu called get here?\n";  
   mainMenu->close ();
-
+ 
   glutMainLoop () ;
 
   return 0 ;
