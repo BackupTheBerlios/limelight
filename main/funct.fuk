@@ -1,0 +1,17 @@
+# func.fuk
+# this is the functions defintion file
+#
+# this is a comment, you cannot have multi line comments in this file
+#
+# functions take this form:
+# name path_to _executable param1Name param1Type ... paramNName paramNType '\n'
+# name is the name you will see on the menu
+# paramType is either: int, bool --- ADD enum types which make radio buttons || listboxes
+# I'd like to change the param type to int instead of string later...
+# example function defintion:
+# lineDetect ./lineDetect precision int coolness bool
+CoolFunc1 ./coolFunc1 param1 int 
+CoolFunc2 ./coolFunc2 param1 int param2 bool 
+CoolFunc3 ./coolFunc3 param1 int param2 int param3 bool 
+noParamsFunction ./crazy 
+noParamsFunction12 ./crazy 
