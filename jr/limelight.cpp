@@ -71,6 +71,7 @@ void addFuncNameCB(puObject*);
 void addFuncFinalCB(puObject*);
 //end crap functions
 void exitCB(puObject*);
+void exitProgram();
 void closeCB(puObject*);
 void saveCB(puObject*);
 void saveFileAsCB(puObject*);
@@ -92,7 +93,7 @@ struct ltstr{ //used for the funcMap
 
 map<const char *, int, ltstr> funcMap; // this is here for the drop down menu, cuz it only return char* (never again pui, never again)
 puMenuBar *mainMenu;
-puFileSelector *openDialogBox;
+puFileSelector *openDialogBox = 0;
 int mainWin;
 int curWidget = 0;
 vector<puObject*> paramsWinObjects; 
@@ -152,8 +153,8 @@ void mousefn(int button, int updown, int x, int y){
 void motionfnWinA(int x, int y ){
   //for the pan
   
-  newOffX=(posWidth-x)/2;
-  newOffY=(posHeight-y)/2;
+  newOffX=(posWidth-x)/10;
+  newOffY=(posHeight-y)/10;
   
   offSetX += newOffX;
   offSetY += newOffY;
@@ -225,33 +226,37 @@ void mousefnWinA(int button, int updown, int x, int y){
 }
 
 void dispfnWinA(){ 
-  glClearColor( 0.9, 1.0, 0.9, 1.0 );
-  glClear(GL_COLOR_BUFFER_BIT);
-  glPixelZoom(2.0,2.0);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glRasterPos2i(-1,-1 );
-  glDrawPixels(loadedImg->A->width(),
-	       loadedImg->A->height(),
-	       GL_RGB,
-	       GL_UNSIGNED_BYTE,
-	       loadedImg->D);
-  glutSwapBuffers();
-  glutPostRedisplay();
+  if(loadedImg!=NULL){
+    glClearColor( 0.9, 1.0, 0.9, 1.0 );
+    glClear(GL_COLOR_BUFFER_BIT);
+    glPixelZoom(2.0,2.0);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glRasterPos2i(-1,-1 );
+    glDrawPixels(loadedImg->A->width(),
+		 loadedImg->A->height(),
+		 GL_RGB,
+		 GL_UNSIGNED_BYTE,
+		 loadedImg->D);
+    glutSwapBuffers();
+    glutPostRedisplay();
+  }
 }
 
 void dispfnWinB(){
-  glClearColor( 0.9, 1.0, 0.9, 1.0 );
-  glClear(GL_COLOR_BUFFER_BIT);
-  
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glRasterPos2i(-1,-1 );
-  glDrawPixels(loadedImg->A->width(), 
-	       loadedImg->A->height(),
-	       GL_RGB,
-	       GL_UNSIGNED_BYTE,
-	       loadedImg->C);
-  glutSwapBuffers();
-  glutPostRedisplay();
+  if(loadedImg!=NULL){
+    glClearColor( 0.9, 1.0, 0.9, 1.0 );
+    glClear(GL_COLOR_BUFFER_BIT);
+    
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glRasterPos2i(-1,-1 );
+    glDrawPixels(loadedImg->A->width(), 
+		 loadedImg->A->height(),
+		 GL_RGB,
+		 GL_UNSIGNED_BYTE,
+		 loadedImg->C);
+    glutSwapBuffers();
+    glutPostRedisplay();
+  }
 }
 
 void displayfn(){
@@ -275,7 +280,7 @@ void keyb(unsigned char key, int x, int y){
   
   if(key=='q'){ //quit
     if(glutGetModifiers()==KEYCONST)
-      exitCB(mainMenu);//does it matter what we pass it? / will this affect performance? we could just make a null puObject
+      exitProgram();//does it matter what we pass it? / will this affect performance? we could just make a null puObject
   }
 
  if(key=='w'){ //close
@@ -298,16 +303,18 @@ void keyb(unsigned char key, int x, int y){
 
 //FILE MENU -- OPEN DIALOG BOX CALLBACK
 void openFileCB(puObject*){
-  char* fileName;
+  cout << "button callback called\n";
+  char* fileName = new char[80];
   openDialogBox->getValue(&fileName);
+  cout << "get value ok\n";
   
   //check to see if the cancel button was hit (is this string conv neccesary)
   string tmp = fileName;
+  cout << "tmp: " << tmp << endl;
   if(tmp.size() == 0){
     puDeleteObject(openDialogBox);
     return;
   }
-  
   openFile(fileName); //we don't want to delete the filName, cuz the glut windows use it
 }
 
@@ -320,7 +327,7 @@ void openFile(char* fileName){
     glutDestroyWindow(winB);
     deleteDspWin(loadedImg);
   }
-
+  
   loadedImg = initDspWin(fileName); //from dspWin.h
   
   //create the windows for it, booh ya ka-sha!
@@ -328,11 +335,11 @@ void openFile(char* fileName){
   string nameA = "Original: ";
   nameA += fileName;
   winA = glutCreateWindow(nameA.c_str());
-  //for zoom stuff
-  glutMotionFunc(motionfnWinA);
-  glutMouseFunc(mousefnWinA);
   glutDisplayFunc(dispfnWinA);
   glutKeyboardFunc(keyb);
+  //for zoom, pan stuff
+  glutMotionFunc(motionfnWinA);
+  glutMouseFunc(mousefnWinA);
 
   glutInitWindowSize(loadedImg->A->height(), loadedImg->A->width());
   string nameB = "Output: ";
@@ -340,9 +347,11 @@ void openFile(char* fileName){
   winB = glutCreateWindow(nameB.c_str());
   glutDisplayFunc(dispfnWinB);
   glutKeyboardFunc(keyb);
-
-  puDeleteObject(openDialogBox);
-  
+ 
+  cout << "before delete\n";
+  if(openDialogBox!=0)
+    puDeleteObject(openDialogBox);
+  cout << "after delete\n";
   //we need to add some kind of if clause for the cancel button
   //but the cancel button doesn't have it's own callback
 
@@ -405,7 +414,7 @@ void createParamsWin(int num){
 
   //ok, now for the new function
   curFunction = num;
-  cout << "curFunction: " << num << endl;
+
   puFrame *box;
   box = new puFrame(0,0,252,280);
   box->setColour(PUCOL_BACKGROUND, 1,1,1, 1);
@@ -547,6 +556,10 @@ void addFuncFinalCB(puObject*){
 
 //FILE MENU -- exit function callback
 void exitCB(puObject*){
+  exitProgram();
+}
+
+void exitProgram(){
   puDeleteObject(mainMenu);
   //TO DO: is this deallocating everything? (check into openGL)
   
@@ -658,7 +671,7 @@ int main ( int argc, char **argv ){
   //here's some performance improvements (WOW!, that's a LOT quicker)
   //i think that we only need to disable them in main (not for every window)
   //framebuffer ops we don't need
-  glDisable(GL_SCISSOR_TEST);
+  /* glDisable(GL_SCISSOR_TEST);
   glDisable(GL_ALPHA_TEST);
   glDisable(GL_STENCIL_TEST);
   glDisable(GL_DEPTH_TEST);
@@ -669,7 +682,7 @@ int main ( int argc, char **argv ){
   glDisable(GL_TEXTURE_3D);
   glDisable(GL_LIGHTING);
   glDisable(GL_FOG);
-
+  */
 
   mainWinHeight = 250;
   mainWinWidth = 400;
@@ -723,8 +736,8 @@ int main ( int argc, char **argv ){
   puCallback file_submenu_cb [8] = { exitCB, NULL, saveAsCB, saveCB, /*NULL, addFuncCB,*/ NULL, closeCB, openCB, NULL};
   
   //make the main menu
-  mainMenu = new puMenuBar ( -1 );
-  mainMenu->add_submenu ( "File", file_submenu, file_submenu_cb);
+  mainMenu = new puMenuBar( -1);
+  mainMenu->add_submenu( "File", file_submenu, file_submenu_cb);
   mainMenu->add_submenu( "Help", help_submenu, help_submenu_cb);
   mainMenu->close ();
 
@@ -732,9 +745,12 @@ int main ( int argc, char **argv ){
   createParamsWin(0);
 
   //the program was called with an image, so open it
-  if(argc > 1)
+  
+  if(argc > 1){
+    cout << argv[1] << endl;
     openFile(argv[1]);
- 
+  }
+  cout << "before the glut main loop\n";  
   glutMainLoop () ;
 
   return 0 ;

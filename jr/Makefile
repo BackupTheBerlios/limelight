@@ -4,20 +4,20 @@ LIBDIR = -L"/tmp/plib-1.8.4/lib"
 INCDIR = -I "/tmp/plib-1.8.4/include"
 
 #FOR LINUX
-LIBDIR += -L/usr/X11R6/lib
+#LIBDIR += -L/usr/X11R6/lib
 
 #FOR MACS
-#FRAMEWORK = -framework GLUT
-#FRAMEWORK += -framework OpenGL
+FRAMEWORK = -framework GLUT
+FRAMEWORK += -framework OpenGL
 
 COMPILERFLAGS = -Wall -ggdb
 CC = gcc
 CFLAGS = $(COMPILERFLAGS) $(INCDIR)
 #FOR MACS
-#LIBRARIES = -lm -lobjc -lstdc++ -lplibpu -lplibfnt -lplibul
+LIBRARIES = -lm -lobjc -lstdc++ -lplibpu -lplibfnt -lplibul
 
 #FOR LINUX
-LIBRARIES = -lm -lX11 -lglut -lstdc++ -lplibpu -lplibfnt -lplibul
+#LIBRARIES = -lm -lX11 -lglut -lstdc++ -lplibpu -lplibfnt -lplibul
 
 all: limelight
 
