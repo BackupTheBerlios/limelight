@@ -273,8 +273,8 @@ void addFuncPathCB(puObject*){
 }
 
 void addFuncNameCB(puObject*){
-  cout << "do we get here\n";
   addFuncName->getValue(addFuncNameValue); //get this value
+  cout << "name: " << addFuncNameValue << endl;
   addFuncParamsNum->getValue(addFuncParamNumValue);
   puDeleteObject(addFuncName);
   puDeleteObject(addFuncParamsNum);
@@ -300,7 +300,6 @@ void addFuncNameCB(puObject*){
     y-=30;
     i++;
   }       
-
   ok = new puOneShot(x,y,"Run");
   ok->setBorderThickness(2);    
   ok->setCallback(addFuncFinalCB);
@@ -315,16 +314,19 @@ void addFuncFinalCB(puObject*){
     addFuncParams[j++]->getValue(tmp1);
     cout << "param name: " << tmp1 << endl;
     tmp.name = tmp1;
-
+    tmp1 = new char[80];
     addFuncParams[j++]->getValue(tmp1);
     cout << "param type: " << tmp1 << endl;
     tmp.type = tmp1;
     addFuncParamsValues.push_back(tmp);
-    j++;
   }
   //ok call this fucker
   //these all need to be changed to string
-  newFunct((string)addFuncNameValue, (string)addFuncPathValue, addFuncParamsValues);
+  string name, path;
+  name = addFuncNameValue;//UGLY
+  path = addFuncPathValue;//UGLY
+  newFunct(name, path, addFuncParamsValues);
+  cout << "function added\n";
 }
 
 //FILE MENU -- exit function callback
