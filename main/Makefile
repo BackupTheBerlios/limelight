@@ -21,6 +21,9 @@ LIBRARIES = -lm -lX11 -lglut -lstdc++ -lplibpu -lplibfnt -lplibul
 
 all: puiTest
 
+enviro: enviro.cpp
+	$(CC) $(CFLAGS) $(FRAMEWORK) -o enviro enviro.cpp $(LIBDIR) $(LIBRARIES)
+
 hello: hello.cpp
 	$(CC) $(CFLAGS) $(FRAMEWORK) -o hello hello.cpp $(LIBDIR) $(LIBRARIES)
 
