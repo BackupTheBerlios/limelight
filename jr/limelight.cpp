@@ -21,7 +21,9 @@ else
 #include <vector.h>
 #include <string>
 #include <map>
-#include "functRead.h" 
+
+//this is changed for BETA - js 3/17?
+#include "functReadCONFIG.h" 
 #include "dspWin.h" 
 #include "functionFileCreator.h"
 
@@ -36,6 +38,8 @@ else
  *kill the glut menus -- DONE ts (3/11)
  *hmmmm... i think that we can totally get rid of c and d... (glPixelZoom(1.0,-1.0)), haha. except giving it a neg num doesnt work (WTF??)
  *check out disabling gl states we dont use -- DONE ts (3/12)
+ *set up program to take in a given configfile and use that for params
+
 
  *wish list:
  *'close' menu item -- DONE ts (3/11)
@@ -706,8 +710,9 @@ int main ( int argc, char **argv ){
   puInit();
   puDisplay();  
 
+  
   //read in functions and make the drop down menu
-  createMenu("funct.fuk", loadedFunctions); //load 'er up
+  createMenu(argv[1], loadedFunctions); //load 'er up
   vector<function>::const_iterator it = loadedFunctions.begin();
   char **functionList = new (char*)[loadedFunctions.size()];
 
@@ -719,6 +724,7 @@ int main ( int argc, char **argv ){
   }
   
   functionList[loadedFunctions.size()] = NULL; //again, this needs to be set to null for pui...
+  
  
   funcItems = new puComboBox( 15, 335, 215, 360, functionList, FALSE ) ;
  
@@ -753,9 +759,9 @@ int main ( int argc, char **argv ){
 
   //the program was called with an image, so open it
   
-  if(argc > 1){
-    cout << argv[1] << endl;
-    openFile(argv[1]);
+  if(argc > 2){
+    cout << argv[2] << endl;
+    openFile(argv[2]);
   }
 
   glutMainLoop () ;
