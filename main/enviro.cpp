@@ -29,7 +29,9 @@ vector<puObject*> paramsWinObjects;
 puDialogBox *paramsWin; //this is an ugly hack for now
 vector<dspWin*> imgsOnScr; //this is the images currently on the screen
 int curImg;
-int w2; // tsk, tsk, so messy
+int w2; // tsk, tsk, so messy, we'll take care of this soon
+int curFunction; //set this when a function menu item is called
+
 /********/
 
 
@@ -53,8 +55,10 @@ void displayfn ()
   puDisplay () ;
   
   //OK WORK
-  if(glutGetWindow() == imgsOnScr[curImg]->winNum){
-    glCallList(curImg);
+  
+  if(!imgsOnScr.empty() && glutGetWindow() == imgsOnScr[curImg]->winNum){
+    //cout << "does this get called?\n";
+    glCallList(curImg+1);
   }
   
   glutSwapBuffers () ;
@@ -66,41 +70,38 @@ void keyb(unsigned char key, int x, int y){
   glutPostRedisplay();
 }
 
-//TMP DISPLAY FUNCTION
-//void disp(void){
-//  
-//  glFlush();
-//  displayfn();
-//}  
-
 //FILE MENU -- OPEN DIALOG BOX CALLBACK
 void openFileCB(puObject*){
   char* fileName;
   openDialogBox->getValue(&fileName);
   
-  curImg = imgsOnScr.size();
   imgsOnScr.push_back(initDspWin(fileName)); //from dspWin.h
-  cout <<"do we get past here?\n";
-  
+
+  curImg = imgsOnScr.size() - 1;
+
   //display it??
   glutInitWindowSize(imgsOnScr[curImg]->A->width(), imgsOnScr[curImg]->A->height());
   glutInitWindowPosition(0,0);   
   imgsOnScr[curImg]->winNum = glutCreateWindow(fileName);
  
   //lets go man, out of the frying pan
-
-  glNewList(curImg, GL_COMPILE);
+  
+  //OK THIS WORKS NICE FOR A SINGLE FILE
+  //BUT WE NEED TO REDO IT TO WORK ON LISTS OF LISTS (glCallLists)
+  //FOR MULTIPLE FILES
+  
+  glNewList(curImg+1, GL_COMPILE);
   glRasterPos2i(-1,-1 ); //what is up with this? 0,0 supposed to be lower left corner...
   glDrawPixels(imgsOnScr[curImg]->A->width(), 
 	       imgsOnScr[curImg]->A->height(),
 	       GL_RGB,
 	       GL_UNSIGNED_BYTE,
 	       imgsOnScr[curImg]->C);
-
   glEndList();
  
   glutDisplayFunc(displayfn);
   glutPostRedisplay();
+  
   //the following note was in a pui ex file, it's probably important
 
   //NOTE: interface creation/deletion must be nested
@@ -125,13 +126,43 @@ void openCB(puObject*){
 
 //PARAMS WINDOW -- CANCEL CALLBACK
 void paramsWinCancelCB(puObject*){
+  //free up all that memory...
+  paramsWinObjects.clear();
   delete paramsWin;
 }
 
+//PARAMS WINDOW -- OK CALLBACK
+//REMINDER: this is the beef of the program, the reason for its living, make 
+//sure that its done well.
+void paramsWinOKCB(puObject*){
+  
+  //create a list of the param values (in the right order) for the function call
+  char *params[paramsWinObjects.size()+4]; //we add 2 to the size cuz the first element is the function name, and the last element is a null value
+  
+  int i = 1; //remember, 0 is the func name
+  unsigned int j = 0;
+  //loop over the param values from the window
+  while(j < paramsWinObjects.size()){
+    char *tmp = new char[80]; //PUI only lets an input string be 80 chars long anyway...
+    paramsWinObjects[j]->getValue(tmp);
+    cout << "ok: " << tmp << endl;
+    params[i++] = tmp;
+    j++;
+  }
+
+  params[0] = loadedFunctions[curFunction].name;
+  params[paramsWinObjects.size()+1] = "./tmp.fuk"; //infile -- this will be trashed
+  params[paramsWinObjects.size()+2] ="./tmp2.fuk"; //outfile -- this will be trashed
+  params[paramsWinObjects.size()+3] = '\0';
+  
+}
+
 //FUNCTION MENU -- CALLBACK
-void createParamsWin(puObject*){
+void createParamsWin(int num){
   //this is lame, but we cannot pass anything in here, so we need to gather what function is being called
   //from somewhere else.... (thundercrash) but where?
+
+  curFunction = num;
   
  //this is most definetly not the ideal way to do this, but for now....
   paramsWin = new puDialogBox(0, 0);
@@ -144,13 +175,13 @@ void createParamsWin(puObject*){
     box->setBorderThickness(1);
 
     //loop over the params of the function
-    //hardcoded for now 
-    vector<pairBuff10>::const_iterator it = loadedFunctions[1].params.begin();
+  
+    vector<pairBuff10>::const_iterator it = loadedFunctions[num].params.begin();
     
     //loop over the params vector, creating fun widgets as we go
     int y=300; 
     int x=100;
-    while(it!=loadedFunctions[1].params.end()){
+    while(it!=loadedFunctions[num].params.end()){
       //if it's an int make a box for it
       if((string)it->second == (string)"int"){
 	puInput *tmp = new puInput ( x, y, x+50,y+20 ) ;
@@ -174,6 +205,7 @@ void createParamsWin(puObject*){
     y-=30;
     puOneShot *ok = new puOneShot(x,y,"OK");
     ok->setBorderThickness(2);    
+    ok->setCallback(paramsWinOKCB);
     puOneShot *cancel = new puOneShot(x+45, y, "Cancel");
     cancel->setBorderThickness(2);
     cancel->setCallback(paramsWinCancelCB);
@@ -211,9 +243,23 @@ int main ( int argc, char **argv )
   file_submenu[2] = "Open";
   file_submenu[1] = "Save";
   file_submenu[0] = "Exit";
-
   puCallback file_submenu_cb [3] = { exitCB, NULL, openCB};
 
+  //read in functions and make a glut style menu
+  createMenu("funct.fuk", loadedFunctions); //load 'er up
+  vector<function>::const_iterator it = loadedFunctions.begin();
+  glutCreateMenu(createParamsWin); //in the future, if we want, this returns an int as an id
+
+  int i=0;
+  while(it != loadedFunctions.end()){
+    glutAddMenuEntry((char*)it->name, i++);
+    it++;
+  }
+
+  glutAttachMenu(GLUT_RIGHT_BUTTON);
+  //end menu creation
+
+  /*DOESN'T WORK, HOPEFULL FIX LATER
   //here's where it a-goes down
   createMenu("funct.fuk", loadedFunctions); //load 'er up
   
@@ -230,10 +276,11 @@ int main ( int argc, char **argv )
   while(i<(const int)loadedFunctions.size())
     functSubmenuCB[i++] = createParamsWin; //WHAT GOES HERE???
   //end the a-going-down-ness
+  */
 
   mainMenu = new puMenuBar ( -1 );
   mainMenu->add_submenu ( "File", file_submenu, file_submenu_cb ) ;
-  mainMenu->add_submenu ( "Functions", functSubmenu, functSubmenuCB);
+  //  mainMenu->add_submenu ( "Functions", functSubmenu, functSubmenuCB);
   mainMenu->close ();
 
   glutMainLoop () ;
