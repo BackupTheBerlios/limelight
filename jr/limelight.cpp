@@ -120,6 +120,8 @@ double offSetY=0.0;
 int zoom=0; //whether or not we are zooming
 double zoomAmount=1.0;
 double zoomOffSetY = 0.0;
+double rasterX = -1;
+double rasterY = -1;
 
 //pui globals
 puFileSelector *addFuncPath;
@@ -223,8 +225,7 @@ void mousefnWinA(int button, int updown, int x, int y){
     if(updown == GLUT_DOWN){
       if(zoom!=1){ 
 	zoom = 1; //zoom is for telling if zoom is on or off
-	cout << "start zoom\n";
-	posHeight=y; //later we can make this the same as posHeight, but for now this will be easier
+	posHeight=y;
       }
     }
     else{
@@ -258,7 +259,7 @@ void dispfnWinA(){
     glClear(GL_COLOR_BUFFER_BIT);
     glPixelZoom(zoomAmount,zoomAmount);
     glPixelStoref(GL_UNPACK_ALIGNMENT, 1);
-    glRasterPos2i(-1,-1 );
+    glRasterPos2i(rasterX,rasterY );
     glDrawPixels(loadedImg->A->width(),
 		 loadedImg->A->height(),
 		 GL_RGB,
@@ -470,6 +471,8 @@ void createParamsWin(int num){
       y-=30;
     }
     //TO DO: add enum stuff
+    //so the type of variable wasn't written correctly in the .lime file
+    else  cout << "FUNCTION PARSE ERROR IN VARIABLE: " << it->first << "UNKNOWN TYPE: " << it->second << endl;
     it++;
   }
   puOneShot *ok = new puOneShot(x,y,"Run");
