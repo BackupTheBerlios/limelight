@@ -113,7 +113,6 @@ double offSetX=0.0;
 double offSetY=0.0;
 int zoom=0; //whether or not we are zooming
 double zoomAmount=1.0;
-double zoomOffSetY = 0.0;
 
 //pui globals
 //puOneShot *ok;
@@ -144,7 +143,9 @@ void motionfnWinA(int x, int y ){
  //for the zoom
   /*ZOOM RESETS TO 0 SOMETIMES ON THE SECOND GO AROUND*/
   if(zoom==1){
-    zoomOffSetY = (double)(posHeight-y) / 10; //so for every 10 pixels we go in a tenth of a zoom level
+    //FIX NEEDED THIS RESETS TO ONE (duh) we gotta rework the logic
+    double zoomOffSetY = (double)(posHeight-y) / 10; //so for every 10 pixels we go in a tenth of a zoom level
+    
     zoomAmount = zoomOffSetY + 1.0;
  
     if(zoomAmount < 1.0) zoomAmount = 1.0;
