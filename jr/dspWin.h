@@ -140,8 +140,10 @@ void get_D_ready (dspWin *target) {
   //for RGB, it is three bigger
   target->D = new unsigned char[width*height*3];
 
-  if (target->A->isRGB)
+  if (target->A->isRGB) {
     getDHelpPPM(target);
+    std::cout << "got here\n";
+  }
   else
     getDHelpPGM(target);
   return;

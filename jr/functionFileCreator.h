@@ -48,7 +48,7 @@ void newFunct(string name, string path, list<parameter> &paramList) {
   std::cout << "name: " << name << endl << "path: " << path << endl;
   ofstream outFile("./funct.fuk", ios::app);  //open file that will hold function list
 
-  outFile << '\n' << '#' << name << ' ' << path;  //insert name and path
+  outFile << '\n' << '#' << name << ' ' << path << ' ';  //insert name and path
 
   //output list of params
   list<parameter>::iterator it = paramList.begin();
