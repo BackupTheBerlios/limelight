@@ -120,8 +120,6 @@ double offSetY=0.0;
 int zoom=0; //whether or not we are zooming
 double zoomAmount=1.0;
 double zoomOffSetY = 0.0;
-double rasterX = -1;
-double rasterY = -1;
 
 //pui globals
 puFileSelector *addFuncPath;
@@ -173,6 +171,13 @@ void motionfnWinA(int x, int y ){
     if((double)(posHeight-y)< 0){
       posHeight = y;
       zoomAmount -= .1;
+      //check to see if we're zooming outside of our bounds
+      float tmp = 1.0/zoomAmount;
+      tmp = 1 - tmp;
+      if(offSetX > ((double)loadedImg->A->width() * tmp)) offSetX = ((double)loadedImg->A->width() * tmp);
+      if(offSetY > ((double)loadedImg->A->height() * tmp)) offSetY = ((double)loadedImg->A->height() * tmp);
+      glPixelStoref(GL_UNPACK_SKIP_ROWS, offSetY);
+      glPixelStoref(GL_UNPACK_SKIP_PIXELS, offSetX);
     }
     
     //don't zoom too much, or out too far
@@ -192,20 +197,28 @@ void motionfnWinA(int x, int y ){
     /*REMEMBER TO TEST PAN ON LENA AND STOP (AND WITH LITTLE ZOOM AMOUNTS AND BIG ONES)*/
     /*AND TEST ON aLena.ppm CUZ SHE FUCKS UP ON MACS */
    
-    newOffX=(posWidth-x)/zoomAmount; //divide by zoom amount cuz otherewise when you're zoomed in at 10x
-    newOffY=(posHeight-y)/zoomAmount;//it goes crazy
+    //height -- move up move image cutoff up / reverse for down
+    if((double)(posHeight-y) > 0) offSetY += .5;
+    if((double)(posHeight-y) < 0) offSetY -= .5;
+
+    //width -- move left move image cutoff left / reverse for right
+    if((double)(posWidth-x) > 0) offSetX += .5;
+    if((double)(posWidth-x) < 0) offSetX -= .5;
+
+    //reset current width and height for next round
+    posHeight = y;
+    posWidth = x;
     
-    offSetX += newOffX;
-    offSetY += newOffY;
-    
-    if(offSetX<0)offSetX=0;
-    if(offSetY<0)offSetY=0;
-    //tmp stuff now now
+    //tmp stuff for now
     float tmp = 1.0/zoomAmount;
     tmp = 1 - tmp;
     
+    //don't try to pan too far...
     if(offSetX > ((double)loadedImg->A->width() * tmp)) offSetX = ((double)loadedImg->A->width() * tmp);
     if(offSetY > ((double)loadedImg->A->height() * tmp)) offSetY = ((double)loadedImg->A->height() * tmp);
+    if(offSetX<0)offSetX=0;
+    if(offSetY<0)offSetY=0;
+
     cout << "zoomAmout: " << zoomAmount << endl;
     cout << "offsetY: " << offSetY << " " << "offSetX: " << offSetY << endl;
     cout << "height: " << (double)loadedImg->A->height()/zoomAmount << " width: " << (double)loadedImg->A->width()/zoomAmount << endl;
@@ -259,7 +272,7 @@ void dispfnWinA(){
     glClear(GL_COLOR_BUFFER_BIT);
     glPixelZoom(zoomAmount,zoomAmount);
     glPixelStoref(GL_UNPACK_ALIGNMENT, 1);
-    glRasterPos2i(rasterX,rasterY );
+    glRasterPos2i(-1.0,-1.0);
     glDrawPixels(loadedImg->A->width(),
 		 loadedImg->A->height(),
 		 GL_RGB,
@@ -472,7 +485,7 @@ void createParamsWin(int num){
     }
     //TO DO: add enum stuff
     //so the type of variable wasn't written correctly in the .lime file
-    else  cout << "FUNCTION PARSE ERROR IN VARIABLE: " << it->first << "UNKNOWN TYPE: " << it->second << endl;
+    else  cout << "FUNCTION PARSE ERROR IN VARIABLE: " << it->first << " UNKNOWN TYPE: " << it->second << endl;
     it++;
   }
   puOneShot *ok = new puOneShot(x,y,"Run");
@@ -702,13 +715,19 @@ int main ( int argc, char **argv ){
     cout << "Error opening limelight, correct syntax is:\nlimelight .lime-absolute-path [PNMimage]\n";
     return 1;
   }
-  
+  int i=0;
+  //check to make sure configfile is .lime
+  while (argv[1][++i]!='\0');
+  if (argv[1][i-1]!='e'||argv[1][i-2]!='m'||argv[1][i-3]!='i'||argv[1][i-4]!='l'){
+    cout << "Configuration file must be .lime file\n";
+    return 1;
+  }
   /*check to make sure that .lime is actually a valid file - DO THIS.  it needs to happen
     within the function that reads the .lime in, since even something with the correct extension
     could still be messed up*/
 
   if (argc==3){
-    int i=0;
+    i=0;
     //if file doesn't end in .pgm, .ppm, or .pbm, we can't read it
     while (argv[2][++i]!='\0');
     if (argv[2][i-1]!='m'||(argv[2][i-2]!='g'&&argv[2][i-2]!='p'&&argv[2][i-2]!='b')||argv[2][i-3]!='p'){
@@ -755,7 +774,7 @@ int main ( int argc, char **argv ){
   vector<function>::const_iterator it = loadedFunctions.begin();
   char **functionList = new (char*)[loadedFunctions.size()];
 
-  int i=0;
+  i=0;
   while(it != loadedFunctions.end()){
     functionList[i] = (char*)it->name;
     funcMap[(char*)it->name] = i++; //map for drop down callback
