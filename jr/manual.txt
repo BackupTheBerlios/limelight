@@ -1,0 +1,75 @@
+Limelight Jr. - Beta v. 0.5
+by Josh Schwartz and Trevor Smith
+_________________________________
+I.Introduction
+II.Installation
+III.Basic user interface
+IV.Creating configuration files
+
+
+I. Introduction
+Limelight is a PNM image viewing and editing program, designed specifically for
+computer vision research, typically involving repeated calling of a given function
+on a given image, with changing parameters.  It is our goal for this program to 
+create an interactive, efficient environment in which CV programs can be tested
+and utilized.  Limelight allows users to attach their own functions to the program,
+such that they then be easily run from within the Graphical User Interface.
+
+Please not that this program is NOT suitable for simple image viewing.
+
+This is currently a beta version, so we would be very appreciative of feedback from
+users.  Please email vegan@cs.uchicago.edu and smitht@cs.uchicago.edu with detailed
+information of any errors that may occur.
+
+
+II. Installation
+To install and run Limelight Jr., your computer must have current libraries for
+OpenGL, GLUT, and PLIB.  OpenGL and GLUT can be obtained at GIVE ADDRESS, and
+PLIB can be obtained at http://plib.sourceforge.net.  The Makefile provided
+must be edited to point to the correct locations for PLIB and GLUT libraries.  Also,
+below lines that say "for mac" lines should be commented out (with "#") if on a linux
+machine, or uncommented for a mac, and the same for lines that read "for linux."
+
+Once these libraries are installed, simply type "make," and the executable
+"limelight" will be created.
+
+
+III. Basic user interface
+Limelight Jr. is called at the command line by the following syntax:
+>limelight configfile [imagefile]
+It is strongly recommended that the configuration file and image file both
+be specified in terms of absolute paths.
+
+If an imagefile is given, it will be automatically opened, otherwise Jr. will
+open and wait for the user to open an image.
+
+There are three windows to the program - the main window, the original image
+window, and the output image window.
+
+The main window has standard navigation functions for opening images, saving (output)
+images, and a help menu.  Additionally, it has a function input box.  If the function
+currently displayed in the pulldown menu is not correct, pull down the menu and select
+the correct function, then hit "change."  If the function you want is not displayed,
+check your configfile (described below) - it's syntax is not correct.
+
+Based on your configfile, boxes for parameters will appear.  When parameters are
+entered and the "run" button hit, the function will run and the output image
+window will be changed to contain the results of this function.
+
+Within both image windows, a user can accomplish a zoom (up to 10x) by holding
+down the shift key, clicking the left mouse button, and dragging up to zoom in and
+down to zoom out.  Once zoomed in, a user can pan around the body of the entire image by
+left clicking and dragging in the desired direction.
+
+Hotkeys:
+Alt+Q = Quit program
+Alt+O = Open
+Alt+S = Save output image
+Alt+W = Close image
+
+
+IV. Configfile (.lime file)
+The configfile holds data on what functions you might call.  This file must be created
+by the user in a text editor (such as Emacs), and must end in ".lime".  The syntax is 
+somewhat complex, but a sample file, "funct.lime," has been included - we suggest that you
+copy the syntax from that.  A detailed description is also given in funct.lime
