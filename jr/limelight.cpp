@@ -56,6 +56,8 @@ void mousefnWinA(int button, int updown, int x, int y);
 void motionfnWinA(int x, int y );
 //window b (output image)
 void dispfnWinB();
+void mousefnWinB(int button, int updown, int x, int y);
+void motionfnWinB(int x, int y );
 //shared
 void keyb(unsigned char key, int x, int y);
 
@@ -110,16 +112,27 @@ dspWin* loadedImg; //this is the loaded image woohoo!
 int winA, winB; //these will be the image windows, ROCK AND ROLL
 //vector<function> loadedFunctions is where all of our functions are stored, it is (sadly) declared in the dspWin.h file
 
-//for zoom and pan
-int mouseOn = 0;
-int posWidth, posHeight;
-double newOffX=0.0;
-double newOffY=0.0;
-double offSetX=0.0;
-double offSetY=0.0;
-int zoom=0; //whether or not we are zooming
-double zoomAmount=1.0;
-double zoomOffSetY = 0.0;
+//for zoom and pan winA
+int mouseOnA = 0;
+int posWidthA, posHeightA;
+double newOffXA=0.0;
+double newOffYA=0.0;
+double offSetXA=0.0;
+double offSetYA=0.0;
+int zoomA=0; //whether or not we are zooming
+double zoomAmountA=1.0;
+double zoomOffSetYA = 0.0;
+
+//for zoom and pan winB
+int mouseOnB = 0;
+int posWidthB, posHeightB;
+double newOffXB=0.0;
+double newOffYB=0.0;
+double offSetXB=0.0;
+double offSetYB=0.0;
+int zoomB=0; //whether or not we are zooming
+double zoomAmountB=1.0;
+double zoomOffSetYB = 0.0;
 
 //pui globals
 puOneShot *ok;
@@ -171,7 +184,7 @@ void dispfnWinA(){
     //loadedImg->A, B, C, D stuff, checkout dspWin.h
     glClearColor( 0.9, 1.0, 0.9, 1.0 );
     glClear(GL_COLOR_BUFFER_BIT);
-    glPixelZoom(zoomAmount,zoomAmount);
+    glPixelZoom(zoomAmountA,zoomAmountA);
     glPixelStoref(GL_UNPACK_ALIGNMENT, 1);
     glRasterPos2i(-1,-1);
     glDrawPixels(loadedImg->A->width(),
@@ -191,14 +204,14 @@ void mousefnWinA(int button, int updown, int x, int y){
   if(glutGetModifiers() == GLUT_ACTIVE_SHIFT){
     glutSetCursor(GLUT_CURSOR_DESTROY);
     if(updown == GLUT_DOWN){
-      if(zoom!=1){ 
-	zoom = 1; //zoom is for telling if zoom is on or off
-	posHeight=y;
+      if(zoomA!=1){ 
+	zoomA = 1; //zoom is for telling if zoom is on or off
+	posHeightA=y;
       }
     }
     else{
       glutSetCursor(GLUT_CURSOR_INHERIT);
-      zoom = 0;
+      zoomA = 0;
     }
     return; //we don't want people panning and zooming at the same time -- that'd just be insane!
   }
@@ -207,26 +220,26 @@ void mousefnWinA(int button, int updown, int x, int y){
   //NEED A FIX: this takes care of the problem after the fact, so that if someone starts zooming
   //again, after they stopped zooming with a shift letup then a mouse button letup, but it would be nice
   // to make it stop zooming when they let up on the shift key
-  if(updown == GLUT_DOWN && zoom==1 && glutGetModifiers() != GLUT_ACTIVE_SHIFT){
+  if(updown == GLUT_DOWN && zoomA==1 && glutGetModifiers() != GLUT_ACTIVE_SHIFT){
     glutSetCursor(GLUT_CURSOR_INHERIT);
-    zoom = 0;
+    zoomA = 0;
     return;
   }
   
   //for the pan
   if(updown == GLUT_DOWN){
-    if(mouseOn == 1)
+    if(mouseOnA == 1)
       return;
     else{
-      mouseOn = 1;
-      posWidth = x;
-      posHeight = y;
+      mouseOnA = 1;
+      posWidthA = x;
+      posHeightA = y;
       glutSetCursor(GLUT_CURSOR_INFO);
     }
   }
   else if (updown == GLUT_UP){ 
     glutSetCursor(GLUT_CURSOR_INHERIT);
-    mouseOn = 0;
+    mouseOnA = 0;
   }
 }
 
@@ -234,36 +247,36 @@ void mousefnWinA(int button, int updown, int x, int y){
 //This function zooms and pans the image
 void motionfnWinA(int x, int y ){
  //for the zoom 
-  if(zoom==1){
+  if(zoomA==1){
     //we moved up a pixel so zoom in
-    if((double)(posHeight-y) > 0){
-      posHeight = y;
-      zoomAmount += .1;
+    if((double)(posHeightA-y) > 0){
+      posHeightA = y;
+      zoomAmountA += .1;
     }
     //we moved down a pixel so zoom out
-    if((double)(posHeight-y)< 0){
-      posHeight = y;
-      zoomAmount -= .1;
+    if((double)(posHeightA-y)< 0){
+      posHeightA = y;
+      zoomAmountA -= .1;
       //check to see if we're zooming outside of our bounds
-      float tmp = 1.0/zoomAmount;
+      float tmp = 1.0/zoomAmountA;
       tmp = 1 - tmp;
-      if(offSetX > ((double)loadedImg->A->width() * tmp)) offSetX = ((double)loadedImg->A->width() * tmp);
-      if(offSetY > ((double)loadedImg->A->height() * tmp)) offSetY = ((double)loadedImg->A->height() * tmp);
-      glPixelStoref(GL_UNPACK_SKIP_ROWS, offSetY);
-      glPixelStoref(GL_UNPACK_SKIP_PIXELS, offSetX);
+      if(offSetXA > ((double)loadedImg->A->width() * tmp)) offSetXA = ((double)loadedImg->A->width() * tmp);
+      if(offSetYA > ((double)loadedImg->A->height() * tmp)) offSetYA = ((double)loadedImg->A->height() * tmp);
+      glPixelStoref(GL_UNPACK_SKIP_ROWS, offSetYA);
+      glPixelStoref(GL_UNPACK_SKIP_PIXELS, offSetXA);
     }
     
     //don't zoom too much, or out too far
-    if(zoomAmount < 1.0) zoomAmount = 1.0;
-    if(zoomAmount > 10.0) zoomAmount = 10.0;
+    if(zoomAmountA < 1.0) zoomAmountA = 1.0;
+    if(zoomAmountA > 10.0) zoomAmountA = 10.0;
   
-    glPixelZoom(zoomAmount,zoomAmount);
+    glPixelZoom(zoomAmountA,zoomAmountA);
     glutPostRedisplay();
     glutSwapBuffers();
     return;
   }
   
-  else if (zoomAmount == 1.0) return; //we cannot pan if zoom is 1
+  else if (zoomAmountA == 1.0) return; //we cannot pan if zoom is 1
   
   //for the pan 
   else{
@@ -271,29 +284,29 @@ void motionfnWinA(int x, int y ){
     /*AND TEST ON aLena.ppm CUZ SHE FUCKS UP ON MACS */
    
     //height -- move up move image cutoff up / reverse for down
-    if((double)(posHeight-y) > 0) offSetY -= 1*zoomAmount;
-    if((double)(posHeight-y) < 0) offSetY += 1*zoomAmount;
+    if((double)(posHeightA-y) > 0) offSetYA -= 1*zoomAmountA;
+    if((double)(posHeightA-y) < 0) offSetYA += 1*zoomAmountA;
 
     //width -- move left move image cutoff left / reverse for right
-    if((double)(posWidth-x) > 0) offSetX += 1*zoomAmount;
-    if((double)(posWidth-x) < 0) offSetX -= 1*zoomAmount;
+    if((double)(posWidthA-x) > 0) offSetXA += 1*zoomAmountA;
+    if((double)(posWidthA-x) < 0) offSetXA -= 1*zoomAmountA;
 
     //reset current width and height for next round
-    posHeight = y;
-    posWidth = x;
+    posHeightA = y;
+    posWidthA = x;
     
     //tmp stuff for now
-    float tmp = 1.0/zoomAmount;
+    float tmp = 1.0/zoomAmountA;
     tmp = 1 - tmp;
     
     //don't try to pan too far...
-    if(offSetX > ((double)loadedImg->A->width() * tmp)) offSetX = ((double)loadedImg->A->width() * tmp);
-    if(offSetY > ((double)loadedImg->A->height() * tmp)) offSetY = ((double)loadedImg->A->height() * tmp);
-    if(offSetX<0)offSetX=0;
-    if(offSetY<0)offSetY=0;
+    if(offSetXA > ((double)loadedImg->A->width() * tmp)) offSetXA = ((double)loadedImg->A->width() * tmp);
+    if(offSetYA > ((double)loadedImg->A->height() * tmp)) offSetYA = ((double)loadedImg->A->height() * tmp);
+    if(offSetXA<0)offSetXA=0;
+    if(offSetYA<0)offSetYA=0;
 
-    glPixelStoref(GL_UNPACK_SKIP_ROWS, offSetY);
-    glPixelStoref(GL_UNPACK_SKIP_PIXELS, offSetX);
+    glPixelStoref(GL_UNPACK_SKIP_ROWS, offSetYA);
+    glPixelStoref(GL_UNPACK_SKIP_PIXELS, offSetXA);
     glutPostRedisplay();
     glutSwapBuffers();
   } 
@@ -318,6 +331,121 @@ void dispfnWinB(){
     glutSwapBuffers();
     glutPostRedisplay();
   }
+}
+
+//WinB (output image) mouse click function
+//This function sets up the zoom and panning
+void mousefnWinB(int button, int updown, int x, int y){
+  //for zoom
+  if(glutGetModifiers() == GLUT_ACTIVE_SHIFT){
+    glutSetCursor(GLUT_CURSOR_DESTROY);
+    if(updown == GLUT_DOWN){
+      if(zoomB!=1){ 
+	zoomB = 1; //zoom is for telling if zoom is on or off
+	posHeightB=y;
+      }
+    }
+    else{
+      glutSetCursor(GLUT_CURSOR_INHERIT);
+      zoomB = 0;
+    }
+    return; //we don't want people panning and zooming at the same time -- that'd just be insane!
+  }
+
+   //if someone let's off of the shift, but not on the mouse button we need to stop the zooming
+  //NEED A FIX: this takes care of the problem after the fact, so that if someone starts zooming
+  //again, after they stopped zooming with a shift letup then a mouse button letup, but it would be nice
+  // to make it stop zooming when they let up on the shift key
+  if(updown == GLUT_DOWN && zoomB==1 && glutGetModifiers() != GLUT_ACTIVE_SHIFT){
+    glutSetCursor(GLUT_CURSOR_INHERIT);
+    zoomB = 0;
+    return;
+  }
+  
+  //for the pan
+  if(updown == GLUT_DOWN){
+    if(mouseOnB == 1)
+      return;
+    else{
+      mouseOnB = 1;
+      posWidthB = x;
+      posHeightB = y;
+      glutSetCursor(GLUT_CURSOR_INFO);
+    }
+  }
+  else if (updown == GLUT_UP){ 
+    glutSetCursor(GLUT_CURSOR_INHERIT);
+    mouseOnB = 0;
+  }
+}
+
+//WinB (output image) motion function
+//This function zooms and pans the image
+void motionfnWinB(int x, int y ){
+ //for the zoom 
+  if(zoomB==1){
+    //we moved up a pixel so zoom in
+    if((double)(posHeightB-y) > 0){
+      posHeightB = y;
+      zoomAmountB += .1;
+    }
+    //we moved down a pixel so zoom out
+    if((double)(posHeightB-y)< 0){
+      posHeightB = y;
+      zoomAmountB -= .1;
+      //check to see if we're zooming outside of our bounds
+      float tmp = 1.0/zoomAmountB;
+      tmp = 1 - tmp;
+      if(offSetXB > ((double)loadedImg->A->width() * tmp)) offSetXB = ((double)loadedImg->A->width() * tmp);
+      if(offSetYB > ((double)loadedImg->A->height() * tmp)) offSetYB = ((double)loadedImg->A->height() * tmp);
+      glPixelStoref(GL_UNPACK_SKIP_ROWS, offSetYB);
+      glPixelStoref(GL_UNPACK_SKIP_PIXELS, offSetXB);
+    }
+    
+    //don't zoom too much, or out too far
+    if(zoomAmountB < 1.0) zoomAmountB = 1.0;
+    if(zoomAmountB > 10.0) zoomAmountB = 10.0;
+  
+    glPixelZoom(zoomAmountB,zoomAmountB);
+    glutPostRedisplay();
+    glutSwapBuffers();
+    return;
+  }
+  
+  else if (zoomAmountB == 1.0) return; //we cannot pan if zoom is 1
+  
+  //for the pan 
+  else{
+    /*REMEMBER TO TEST PAN ON LENA AND STOP (AND WITH LITTLE ZOOM AMOUNTS AND BIG ONES)*/
+    /*AND TEST ON aLena.ppm CUZ SHE FUCKS UP ON MACS */
+   
+    //height -- move up move image cutoff up / reverse for down
+    if((double)(posHeightB-y) > 0) offSetYB -= 1*zoomAmountB;
+    if((double)(posHeightB-y) < 0) offSetYB += 1*zoomAmountB;
+
+    //width -- move left move image cutoff left / reverse for right
+    if((double)(posWidthB-x) > 0) offSetXB += 1*zoomAmountB;
+    if((double)(posWidthB-x) < 0) offSetXB -= 1*zoomAmountB;
+
+    //reset current width and height for next round
+    posHeightB = y;
+    posWidthB = x;
+    
+    //tmp stuff for now
+    float tmp = 1.0/zoomAmountB;
+    tmp = 1 - tmp;
+    
+    //don't try to pan too far...
+    if(offSetXB > ((double)loadedImg->A->width() * tmp)) offSetXB = ((double)loadedImg->A->width() * tmp);
+    if(offSetYB > ((double)loadedImg->A->height() * tmp)) offSetYB = ((double)loadedImg->A->height() * tmp);
+    if(offSetXB<0)offSetXB=0;
+    if(offSetYB<0)offSetYB=0;
+
+    glPixelStoref(GL_UNPACK_SKIP_ROWS, offSetYB);
+    glPixelStoref(GL_UNPACK_SKIP_PIXELS, offSetXB);
+    glutPostRedisplay();
+    glutSwapBuffers();
+  } 
 }
 
 //shared
@@ -615,6 +743,9 @@ void openFile(char* fileName){
   winB = glutCreateWindow(nameB.c_str());
   glutDisplayFunc(dispfnWinB);
   glutKeyboardFunc(keyb);
+  //for zoom, pan stuff
+  glutMotionFunc(motionfnWinB);
+  glutMouseFunc(mousefnWinB);
  
   if(openDialogBox!=0)
     puDeleteObject(openDialogBox);
