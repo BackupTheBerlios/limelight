@@ -14,8 +14,8 @@ using namespace std;
 //structure def
 
 struct pairBuff10{ //this is here cuz stl pair wont take char*
-  char first[10];
-  char second[10];
+  char first[20];
+  char second[20];
 };
 
 struct function{
@@ -58,17 +58,11 @@ void createMenu(char *fileName, vector<function> &loadedFunctions){
 
     //now read the params, until we get a new line
     while(fileStream.get() != '\n' && !fileStream.eof()){
-      
       fileStream.unget();
-
       pairBuff10 tmp;
-      
-      fileStream.get(tmp.first, 10, ' ');
-      fileStream.get(); //kill the space
-      fileStream.get(tmp.second, 10, ' ');
-      fileStream.get();//kill the space
+      fileStream >> tmp.first;
+      fileStream >> tmp.second;
       tmpFunction.params.push_back(tmp);
-      
     }
     
     //at this point we have a nice new function struct

@@ -574,13 +574,11 @@ void saveWinCB(puObject*){
 
 //call function callback
 void callFuncCB(puObject*){
-  //TO DO: we should probably add some check to make sure there are values in the params...
-
   //check to make sure there's an image loaded
   if(loadedImg == NULL) return;
 
   //create a list of the param values (in the right order) for the function call
-  char *params[paramsWinObjects.size()+4]; //we add 4 to the size cuz the first element is the function name, the last element is a null value, plus in and out files
+  char *params[paramsWinObjects.size()+2]; //we add 4 to the size cuz the first element is the function name, the last element is a null value, plus in and out files
   
   int i = 1; //remember, 0 is the func name
   unsigned int j = 0;
@@ -588,14 +586,11 @@ void callFuncCB(puObject*){
   while(j < paramsWinObjects.size()){
     char *tmp = new char[80]; //PUI only lets an input string be 80 chars long anyway...
     paramsWinObjects[j]->getValue(tmp);
-    params[i++] = tmp;
-    j++;
+    params[i++] = tmp; j++;
   }
 
   params[0] = loadedFunctions[curFunction].name;
-  params[paramsWinObjects.size()+1] = "/tmp/tmp.lime"; //infile -- this will be trashed
-  params[paramsWinObjects.size()+2] ="/tmp/tmp2.lime"; //outfile -- this will be trashed
-  params[paramsWinObjects.size()+3] = '\0';
+  params[paramsWinObjects.size()+1] = '\0';
 
   glutSetCursor(GLUT_CURSOR_WAIT); //make a cool wait cursor for while the function is running
   callFunct(loadedImg, curFunction, params); //from dspWin.h
@@ -635,10 +630,10 @@ void dspFuncParams(int num){
     start++;
   }
   paramsWinObjects.clear();
-
+  
   //ok, now for the new function
   curFunction = num;
-
+  
   puFrame *box;
   box = new puFrame(0,0,252,280);
   box->setColour(PUCOL_BACKGROUND, 1,1,1, 1);
@@ -652,8 +647,20 @@ void dspFuncParams(int num){
   int y=250; 
   int x=100;
   while(it!=loadedFunctions[num].params.end()){
+    if((string)it->first == (string)"input"){
+      puInput *tmp = new puInput ( x, y, x+50,y+20 ) ;
+      tmp->setValue("/tmp/tmp.lime");
+      tmp->hide();
+      paramsWinObjects.push_back(tmp); //push these onto the vector so we can grab their values later
+    }
+    else if ((string)it->first == (string)"output"){
+      puInput *tmp = new puInput ( x, y, x+50,y+20 );
+      tmp->setValue("/tmp/tmp2.lime");
+      tmp->hide();
+      paramsWinObjects.push_back(tmp); //push these onto the vector so we can grab their values later
+    } 
     //if it's an int make a box for it
-    if((string)it->second == (string)"int"){
+    else if((string)it->second == (string)"int"){
       puInput *tmp = new puInput ( x, y, x+50,y+20 ) ;
       tmp->setBorderThickness(1);
       tmp->setLabelPlace(PUPLACE_CENTERED_LEFT);
@@ -749,7 +756,7 @@ void openFile(char* fileName){
   zoomOffSetYB = 0.0;
 
   //create the windows for it, booh ya ka-sha!
-  glutInitWindowSize(loadedImg->A->height(), loadedImg->A->width());
+  glutInitWindowSize(loadedImg->A->width(), loadedImg->A->height());
   string nameA = "Original: ";
   nameA += fileName;
   winA = glutCreateWindow(nameA.c_str());
@@ -759,7 +766,7 @@ void openFile(char* fileName){
   glutMotionFunc(motionfnWinA);
   glutMouseFunc(mousefnWinA);
 
-  glutInitWindowSize(loadedImg->A->height(), loadedImg->A->width());
+  glutInitWindowSize(loadedImg->A->width(), loadedImg->A->height());
   string nameB = "Output: ";
   nameB += fileName;
   winB = glutCreateWindow(nameB.c_str());

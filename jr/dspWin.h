@@ -43,12 +43,10 @@ dspWin* initDspWin(char *filePath);
 void get_C_ready (dspWin *target);
 void get_D_ready (dspWin *target);
 void saveDspWin(dspWin *src, char *filePath);
-void saveDspWin(dspWin *src);
 void saveTMP(dspWin *src);
 void deleteDspWin(dspWin *target);
 void callFunct(dspWin *target, int i, char **par);
 void load2B(dspWin *target, char *filePath);
-void revert2A(dspWin *target);
 void getCHelpPPM(dspWin *target);
 void getCHelpPGM(dspWin *target);
 void getCHelpPBM(dspWin *target);
@@ -277,18 +275,6 @@ void saveDspWin(dspWin *src, char *filePath) {
   return;
 }
 
-//function that saves B to same location as A, then loads image
-void saveDspWin(dspWin *src) {
-  if (src->A->isRGB==3)
-    savePPM(src->B, src->path);
-  else if (src->A->isRGB==2)
-    savePGM(src->B, src->path);
-  else
-    savePBM(src->B, src->path);
-  delete src->A;
-  src->A = src->B->copy();
-}
-
 //function that saves B as tmp
 void saveTMP(dspWin *src) {
   if (src->A->isRGB==3)
@@ -372,17 +358,5 @@ void load2B(dspWin *target, char *filePath) {
     target->B = loadPBM(filePath);
   return;
 }
-
-/*Function that changes B and C back into copy
-  gotten from A */
-/*
-  void revert2A(dspWin *target) {
-  delete target->B;
-  delete[] target->C;
-  target->B = target->A->copy();
-  get_C_ready(target);
-  return;
-  }
-*/
 
 #endif

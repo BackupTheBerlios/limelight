@@ -1,4 +1,3 @@
-
 #THESE PATHS MUST GO TO PLIB, whereever it may be ...
 LIBDIR = -L"/tmp/plib-1.8.4/lib"
 INCDIR = -I "/tmp/plib-1.8.4/include"

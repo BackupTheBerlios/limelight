@@ -10,11 +10,13 @@
 # I'd like to change the param type to int instead of string later...
 # example function defintion:
 # lineDetect ./lineDetect precision int coolness bool
-Segment /home/smitht/segment/segment Sigma int K int Min int 
-Black ../../alpha/funcTest Color int 
-CoolFunc1 ./coolFunc1 param1 int 
-CoolFunc2 ./coolFunc2 Yaw int Attack? bool Hue int Magic int Cool bool 
-CoolFunc3 ./coolFunc3 param1 int param2 int param3 bool 
-noParamsFunction ./crazy 
-noParamsFunction12 ./crazy 
+Segment /home/smitht/segment/segment Sigma int K int Min int input file output file
+Noise /home/vegan/bp-vision/noise input file output file amount int
+Restore /home/vegan/bp-vision/restore input file output file
+Black ../../alpha/funcTest Color int
+CoolFunc1 ./coolFunc1 param1 int
+CoolFunc2 ./coolFunc2 Yaw int Attack? bool Hue int Magic int Cool bool
+CoolFunc3 ./coolFunc3 param1 int param2 int param3 bool
+noParamsFunction ./crazy
+noParamsFunction12 ./crazy
 
