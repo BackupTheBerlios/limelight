@@ -611,11 +611,11 @@ void saveFileAsCB(puObject*){
   }
 
   saveDspWin(loadedImg, tmp);
-  delete[] tmp;
   //so here, we should actually reload the entire img, so as to rename the win names, etc.
   //in the future this could be a place for improvement, cuz we don't actually need to call
   //the entire open sequence...
-  openFile(loadedImg->path);
+  openFile(tmp);
+  delete[] tmp;
 }
 
 //stuff for making a pop-up
