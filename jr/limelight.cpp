@@ -859,7 +859,7 @@ int main ( int argc, char **argv ){
   chngFuncBtn->setCallback(chngFuncCB);
   
   //draw a line for the top of the screen
-  puFrame *top =  new puFrame(0,375,250,401.5);
+  puFrame *top =  new puFrame(0,375,250,402);
   top->setColour(PUCOL_BACKGROUND, 1,1,1,1);
   top->setStyle(PUSTYLE_BOXED);
   top->setBorderThickness(1);  
