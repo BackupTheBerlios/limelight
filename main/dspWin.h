@@ -5,6 +5,7 @@
 #include "pnmfile.h"
 #endif
 
+
 #include <unistd.h>
 #include <sys/wait.h>
 
@@ -53,14 +54,19 @@ void deleteDspWin(dspWin *target);
 void callFunct(dspWin *target, int i, char **par);
 void load2B(dspWin *target, char *filePath);
 void revert2A(dspWin *target);
+void saveDspWin(dspWin *src);
 
 //initialize dspWin from disk
 dspWin* initDspWin(char *filePath) {
   
   dspWin *tmp = new dspWin;
   tmp->path = new char[50];
-  tmp->path = filePath;
- 
+
+  for (int i = 0; filePath[i]!='\0'; i++)
+    tmp->path[i] = filePath[i];
+  //tmp->path = filePath;
+  
+
   /*this won't work unless we change Pedro's  pnmfile.h
     so that it will read any image without caring if they are pgm, ppm, etc.
     ASK HIM ABOUT IT */
@@ -110,6 +116,14 @@ void saveDspWin(dspWin *src, char *filePath) {
   src->A = src->B->copy();
 }
 
+//function that saves B to same location as A, then loads image
+void saveDspWin(dspWin *src) {
+  savePPM(src->B, src->path);
+  cout <<"file saved succesfully\n";
+  delete src->A;
+  src->A = src->B->copy();
+}
+
 //function that saves B as tmp
 void saveTMP(dspWin *src) {
   savePPM(src->B, "/tmp/tmp.fuk");
@@ -124,7 +138,7 @@ void deleteDspWin(dspWin *target) {
 }
 
 /*Calls function on B*/
-//file is stored at ./tmp.fuck (in) and tmp2.fuk (out)
+//file is stored at ./tmp.fuk (in) and tmp2.fuk (out)
 //these are imbedded in params
 void callFunct(dspWin *target, int i, char **par){
   //save temporary copy
