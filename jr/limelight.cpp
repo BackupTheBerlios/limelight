@@ -32,6 +32,7 @@ else
 
  *hmmmm... i think that we can totally get rid of c and d... (glPixelZoom(1.0,-1.0)), haha. except giving it a neg num doesnt work (WTF??)
  *check out disabling gl states we dont use -- for macs and linux
+ *add zoom/pan to second window
 
  *wish list:
  *add a printout from the stdout (this one is a little hard, we need to make it pipe the exec) -- dup2 to a text file so people can look at it later
@@ -55,12 +56,6 @@ void openFile(char* fileName);
 void openCB(puObject*); //this is for the menu (open dialog box)
 void paramsWinOKCB(puObject*);
 void createParamsWin(int num);
-//crapfunctions
-void addFuncCB(puObject*);
-void addFuncPathCB(puObject*);
-void addFuncNameCB(puObject*);
-void addFuncFinalCB(puObject*);
-//end crap functions
 void exitCB(puObject*);
 void exitProgram();
 void closeCB(puObject*);
@@ -106,20 +101,10 @@ double zoomAmount=1.0;
 double zoomOffSetY = 0.0;
 
 //pui globals
-puFileSelector *addFuncPath;
-puInput *addFuncName, *addFuncParamsNum;
-vector<puObject*> addFuncParams; //the entires will be name, then type, ok cool 
-char *addFuncPathValue = new char[80]; 
-char *addFuncNameValue = new char[80]; 
-int *addFuncParamNumValue = new int;
-void addFuncCB(puObject*);
-void addFuncPathCB(puObject*);
-void addFuncNameCB(puObject*);
-void addFuncFinalCB(puObject*);
 puOneShot *ok;
 puDialogBox *popupBox = NULL ;
 puComboBox *funcItems;
-puOneShot *funcOk;
+puOneShot *chngFuncBtn;
 //end pui globals (you're dumb pui)
 
 #ifndef PARAM_S
@@ -129,9 +114,6 @@ struct parameter {
   string type;
 };
 #endif
-
-
-list<parameter> addFuncParamsValues; //the entires will be name, then type, ok not cool, pui is lame
 
 void motionfn(int x, int y){
   puMouse(x, y);
@@ -487,107 +469,6 @@ void createParamsWin(int num){
   ok->setCallback(paramsWinOKCB);
 }
 
-//FILE MENU -- add function callback
-//LET ME JUST SAY THAT I AM NOT RESPONSIBLE FOR THIS SHIT
-//(it was written between 3 and something in the morning, and it's all crap)
-void addFuncCB(puObject*){
-  //grab the path to the binary
-  addFuncPath = new puFileSelector(0, 0, 252, 324, "", "Please select a binary");
-  addFuncPath->setInitialValue("");
-  addFuncPath->setChildBorderThickness(PUCLASS_INPUT, 1);
-  addFuncPath->setCallback(addFuncPathCB);  
-}
-
-void addFuncPathCB(puObject*){
- 
-  addFuncPath->getValue(addFuncPathValue); //store value of the filepath
-  puDeleteObject(addFuncPath);
- 
-  //TO DO: check for cancel button (cuz it doesn't have its own callback)
-  //TO DO: these labels don't show up, i have NO idea why...
-  
-  //this guy needs to be deleted (aka globally declared)
-  puText *title = new puText(50, 200);
-  title->setLabelPlace(PUPLACE_CENTERED_LEFT);
-  title->setLabel("Add new function (2 of 3)");
-
-  addFuncName = new puInput(50, 150, 100, 170);
-  addFuncName->setLabel("Name: ");
-  addFuncName->setBorderThickness(1);
-  addFuncName->setLabelPlace(PUPLACE_CENTERED_LEFT);
-  
-  addFuncParamsNum = new puInput(50, 100, 100, 120);
-  addFuncParamsNum->setBorderThickness(1);
-  addFuncParamsNum->setLabelPlace(PUPLACE_CENTERED_LEFT);
-  addFuncParamsNum->setLabel("# of params: ");
-  
-  ok = new puOneShot(50,50,"Ok");
-  ok->setBorderThickness(2);    
-  ok->setCallback(addFuncNameCB);
-}
-
-void addFuncNameCB(puObject*){
-  addFuncName->getValue(addFuncNameValue); //get this value
-  cout << "name: " << addFuncNameValue << endl;
-  addFuncParamsNum->getValue(addFuncParamNumValue);
-  puDeleteObject(addFuncName);
-  puDeleteObject(addFuncParamsNum);
-  puDeleteObject(ok);
-  
-  //loop over the params vector, creating fun widgets as we go
-  int y=280; 
-  int x=100;
-  int i =0; 
-  while(i != *addFuncParamNumValue){
-    puInput *tmp = new puInput ( x, y, x+50,y+20 ) ;
-    tmp->setBorderThickness(1);
-    tmp->setLabelPlace(PUPLACE_CENTERED_LEFT);
-    tmp->setLabel("Name:");
-    addFuncParams.push_back(tmp); //push these onto the vector so we can grab their values later
-    y-=30;
-    //add type boxes
-    tmp = new puInput ( x, y, x+50,y+20 ) ;
-    tmp->setBorderThickness(1);
-    tmp->setLabelPlace(PUPLACE_CENTERED_LEFT);
-    tmp->setLabel("Type:");
-    addFuncParams.push_back(tmp); //push these onto the vector so we can grab their values later
-    y-=30;
-    i++;
-  }       
-  ok = new puOneShot(x,y,"Run");
-  ok->setBorderThickness(2);    
-  ok->setCallback(addFuncFinalCB);
-}
-
-void addFuncFinalCB(puObject*){
-  unsigned int j = 0;
-  //loop over the param values from the window
-  while(j < addFuncParams.size()){
-    parameter tmp;
-    char *tmp1 = new char[80];
-    addFuncParams[j]->getValue(tmp1);
-    puDeleteObject(addFuncParams[j++]);
-    cout << "param name: " << tmp1 << endl;
-    tmp.name = tmp1;
-    tmp1 = new char[80];
-    addFuncParams[j]->getValue(tmp1);
-    puDeleteObject(addFuncParams[j++]);
-    cout << "param type: " << tmp1 << endl;
-    tmp.type = tmp1;
-    addFuncParamsValues.push_back(tmp);
-  }
-  puDeleteObject(ok);
-  //ok call this fucker
-  //these all need to be changed to string
-  string name, path;
-  name = addFuncNameValue;//UGLY
-  path = addFuncPathValue;//UGLY
-  newFunct(name, path, addFuncParamsValues);
-  cout << "function added\n";
-}
-
-//END SECTION OF CODE NO ONE IS RESPONSIBLE FOR
-
 //FILE MENU -- exit function callback
 void exitCB(puObject*){
   exitProgram();
@@ -684,7 +565,7 @@ void aboutCB(puObject*){
 //FILE MENU -- SAVE AS CALLBACK
 void saveAsCB(puObject*){
   if(loadedImg != NULL){
-    openDialogBox = new puFileSelector(0, 0, 252, 324, "", "Please print to where you want to save");
+    openDialogBox = new puFileSelector(0, 0, 252, 324, "", "Please type where you want to save");
     openDialogBox->setInitialValue(""); //make this pretty later
     openDialogBox->setChildBorderThickness(PUCLASS_INPUT, 1);
     openDialogBox->setCallback(saveFileAsCB);
@@ -747,6 +628,7 @@ int main ( int argc, char **argv ){
   glDisable(GL_FOG);
   */
 
+  //intialize the limelight function params window
   mainWinHeight = 250;
   mainWinWidth = 400;
   glutInitWindowSize ( mainWinHeight, mainWinWidth ) ;
@@ -780,9 +662,9 @@ int main ( int argc, char **argv ){
  
   funcItems = new puComboBox( 15, 335, 215, 360, functionList, FALSE ) ;
  
-  funcOk = new puOneShot(15, 300, "Change");
-  funcOk->setBorderThickness(2);
-  funcOk->setCallback(funcReload);
+  chngFuncBtn = new puOneShot(15, 300, "Change Function");
+  chngFuncBtn->setBorderThickness(2);
+  chngFuncBtn->setCallback(funcReload);
   
   //draw a line for the top of the screen
   puFrame *top =  new puFrame(0,375,250,401.5);
@@ -790,15 +672,12 @@ int main ( int argc, char **argv ){
   top->setStyle(PUSTYLE_BOXED);
   top->setBorderThickness(1);  
 
-  //help -- here's the vedict on these arrays, they NEED to be one longer than the length, and the last entry needs to be a NULL
-  //otherwise we get weird seg faults, etc.
   char *help_submenu[4] = {"Help", "-----", "About", NULL};
   puCallback help_submenu_cb [4] = {helpCB, NULL, aboutCB, NULL};
 
   //file menu 
-  //for now, we have now "add function" menu item, cuz i dont feel like making it good.
-  char *file_submenu[8] = {"Exit           Alt+Q", "--------------------", "Save as   Alt+Shft+S", "Save           Alt+S",/* "--------------------", "Add new function",*/ "--------------------","Close          Alt+W", "Open           Alt+O", NULL};
-  puCallback file_submenu_cb [8] = { exitCB, NULL, saveAsCB, saveCB, /*NULL, addFuncCB,*/ NULL, closeCB, openCB, NULL};
+  char *file_submenu[8] = {"Exit           Alt+Q", "--------------------", "Save as   Alt+Shft+S", "Save           Alt+S", "--------------------","Close          Alt+W", "Open           Alt+O", NULL};
+  puCallback file_submenu_cb [8] = { exitCB, NULL, saveAsCB, saveCB, NULL, closeCB, openCB, NULL};
   
   //make the main menu
   mainMenu = new puMenuBar( -1);
