@@ -75,7 +75,7 @@ static image *loadPBM(const char *name) {
   int height = atoi(buf);
   
   /* read data */
-  image *im = new image(width, height, false);
+  image *im = new image(width, height, 1);
   for (int i = 0; i < height; i++)
     read_packed(imPtr(im, 0, i), width, file);
   
@@ -111,8 +111,7 @@ static image *loadPGM(const char *name) {
     throw pnm_error();
 
   /* read data */
-  image *im = new image(width, height, false);
-  //file.read((char *)imPtr(im, 0, 0), width * height * sizeof(uchar));
+  image *im = new image(width, height, 2);
   file.read((char *)im->data, width * height * sizeof(uchar));
   return im;
 }
@@ -146,8 +145,7 @@ static image *loadPPM(const char *name) {
     throw pnm_error();
 
   /* read data */
-  image *im = new image(width, height, true);
-  //file.read((char *)imPtr(im, 0, 0), width * height * 3 * sizeof(uchar) + (2*sizeof(uchar)));
+  image *im = new image(width, height, 3);
   file.read((char *)im->data, width * height * 3 * sizeof(uchar) + (2*sizeof(uchar)));
 
   return im;

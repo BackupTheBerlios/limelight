@@ -51,8 +51,10 @@ void load2B(dspWin *target, char *filePath);
 void revert2A(dspWin *target);
 void getCHelpPPM(dspWin *target);
 void getCHelpPGM(dspWin *target);
+void getCHelpPBM(dspWin *target);
 void getDHelpPPM(dspWin *target);
 void getDHelpPGM(dspWin *target);
+void getDHelpPBM(dspWin *target);
 
 /********************End Prototypes*************/
 
@@ -75,7 +77,7 @@ dspWin* initDspWin(char *filePath) {
   //open file
   ifstream input(filePath, ios::in);
   
-  //check second character (P_) - if it's 6, then this is a ppm, if 5, then pgm
+  //check second character (P_) - if it's 6, then this is a ppm, if 5, then pgm, 4 - pbm
   input.seekg(1, ios::beg);
   char c = input.peek();
   input.close();
@@ -86,6 +88,8 @@ dspWin* initDspWin(char *filePath) {
   case '5' :
     tmp->A = loadPGM(filePath);
     break;
+  case '4' :
+    tmp->A = loadPBM(filePath);
   }
   
   //tmp B is initially a copy of A
@@ -112,8 +116,9 @@ void get_C_ready (dspWin *target) {
   target->C = new unsigned char[width*height*3];
   
   //check if image is already RGB or not
-  if (target->A->isRGB) getCHelpPPM(target);
-  else getCHelpPGM(target);
+  if (target->A->isRGB==3) getCHelpPPM(target);
+  else if (target->A->isRGB==2) getCHelpPGM(target);
+  else getCHelpPBM(target);
   return;
 }
 
@@ -132,8 +137,9 @@ void get_D_ready (dspWin *target) {
   target->D = new unsigned char[width*height*3];
   
   //check if image is already RGB
-  if (target->A->isRGB) getDHelpPPM(target);
-  else getDHelpPGM(target);
+  if (target->A->isRGB==3) getDHelpPPM(target);
+  else if (target->A->isRGB==2) getDHelpPGM(target);
+  else getDHelpPBM(target);
   return;
 }
 
@@ -166,6 +172,27 @@ void getCHelpPGM(dspWin *target) {
   for (int i=height-1; i>=0; i--) {
     for (int j=0; j<width; j++) {
       helper = target->B->data[(i*width)+j];
+      target->C[count++] = helper;
+      target->C[count++] = helper;
+      target->C[count++] = helper;
+    }
+  }
+  return;
+}
+
+
+//Loads PBM image into C
+void getCHelpPBM(dspWin *target) {
+  //counter variables
+  int width = target->B->width();
+  int height = target->B->height();
+  int count = 0;  //counter for loop
+  char helper;
+  
+  //loop to load data - throws black or white value of pixel into R, G, and B
+  for (int i=height-1; i>=0; i--) {
+    for (int j=0; j<width; j++) {
+      helper = target->B->data[(i*width)+j]==1?0:255;
       target->C[count++] = helper;
       target->C[count++] = helper;
       target->C[count++] = helper;
@@ -212,31 +239,58 @@ void getDHelpPGM(dspWin *target) {
 }
 
 
+//Loads PBM image into D
+void getDHelpPBM(dspWin *target) {
+  //counter variables
+  int width = target->A->width();
+  int height = target->A->height();
+  int count = 0;  //counter for loop
+  unsigned char helper;
+  
+  //loop to load data - throws black or white value of pixel into R, G, and B
+  for (int i=height-1; i>=0; i--) {
+    for (int j=0; j<width; j++) {
+      helper = target->A->data[(i*width)+j]==1?0:255;
+      target->D[count++] = helper;
+      target->D[count++] = helper;
+      target->D[count++] = helper;
+    }
+  }
+  return;
+}
+
+
 //function that saves B
 void saveDspWin(dspWin *src, char *filePath) {
-  if (src->A->isRGB)
+  if (src->A->isRGB==3)
     savePPM(src->B, filePath);
-  else
+  else if (src->A->isRGB==2)
     savePGM(src->B, filePath);
+  else
+    savePBM(src->B, filePath);
   return;
 }
 
 //function that saves B to same location as A, then loads image
 void saveDspWin(dspWin *src) {
-  if (src->A->isRGB)
+  if (src->A->isRGB==3)
     savePPM(src->B, src->path);
-  else
+  else if (src->A->isRGB==2)
     savePGM(src->B, src->path);
+  else
+    savePBM(src->B, src->path);
   delete src->A;
   src->A = src->B->copy();
 }
 
 //function that saves B as tmp
 void saveTMP(dspWin *src) {
-  if (src->A->isRGB)
+  if (src->A->isRGB==3)
     savePPM(src->A, "/tmp/tmp.lime");
-  else
+  else if (src->A->isRGB==2)
     savePGM(src->A, "/tmp/tmp.lime");
+  else
+    savePBM(src->A, "/tmp/tmp.lime");
   return;
 }
 
@@ -298,10 +352,12 @@ void callFunct(dspWin *target, int i, char **par){
 //Function that loads file into B
 void load2B(dspWin *target, char *filePath) {
   delete target->B;
-  if (target->A->isRGB)
+  if (target->A->isRGB==3)
     target->B = loadPPM(filePath);
-  else
+  else if (target->A->isRGB==2)
     target->B = loadPGM(filePath);
+  else
+    target->B = loadPBM(filePath);
   return;
 }
 

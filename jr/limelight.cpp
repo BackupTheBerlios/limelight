@@ -777,17 +777,17 @@ int main ( int argc, char **argv ){
   /*check to make sure that .lime is actually a valid file - DO THIS.  it needs to happen
     within the function that reads the .lime in, since even something with the correct extension
     could still be messed up*/
-
+  
   if (argc==3){
     i=0;
     //if file doesn't end in .pgm, .ppm, or .pbm, we can't read it
     while (argv[2][++i]!='\0');
-    if (argv[2][i-1]!='m'||(argv[2][i-2]!='g'&&argv[2][i-2]!='p'&&argv[2][i-2]!='b')||argv[2][i-3]!='p'){
+    if (argv[2][i-1]!='m'||(argv[2][i-2]!='g'&&argv[2][i-2]!='p'&&argv[2][i-2]!='b'&&argv[2][i-2]!='b')||argv[2][i-3]!='p'){
       cout << "ERROR: The image given is not a valid PNM image\n";
       return 1;
     }
   }
-    
+  
   //here's some performance improvements (WOW!, that's a LOT quicker)
   //i think that we only need to disable them in main (not for every window)
   //framebuffer ops we don't need

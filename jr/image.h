@@ -8,7 +8,7 @@
 class image {
  public:
   /* create an image */
-  image(const int width, const int height, const bool colored);
+  image(const int width, const int height, const int type);
 
   /* delete an image */
   ~image();
@@ -32,7 +32,7 @@ class image {
   unsigned char **access;
   
   int w, h, pixelCount;
-  bool isRGB;
+  int isRGB;  //1 for PBM, 2 for PGM, 3 for PPM
 };
 
 /* use imRef to access image data. */
@@ -41,11 +41,11 @@ class image {
 /* use imPtr to get pointer to image data. */
 #define imPtr(im, x, y) &(im->access[y][x])
 
-image::image(const int width, const int height, const bool colored) {
+image::image(const int width, const int height, const int type) {
   w = width;
   h = height;
-  isRGB = colored;
-  pixelCount = isRGB?3:1;
+  isRGB = type;
+  pixelCount = isRGB==3?3:1;
   data = new unsigned char[w * h * pixelCount];  // allocate space for image data
   access = new unsigned char*[h];   // allocate space for row pointers
   
