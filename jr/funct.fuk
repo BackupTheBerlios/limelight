@@ -10,11 +10,11 @@
 # I'd like to change the param type to int instead of string later...
 # example function defintion:
 # lineDetect ./lineDetect precision int coolness bool
+Black ../../alpha/funcTest Color int 
 CoolFunc1 ./coolFunc1 param1 int 
 CoolFunc2 ./coolFunc2 Yaw int Attack? bool Hue int Magic int Cool bool 
 CoolFunc3 ./coolFunc3 param1 int param2 int param3 bool 
 Segment /home/smitht/segment/segment Sigma int K int Min int 
 noParamsFunction ./crazy 
 noParamsFunction12 ./crazy 
-serg /home/smitht/tmp/jr/dspWin.h asdf int 
-new /home/smitht/tmp/jr/enviro.cpp one int two bool 
+

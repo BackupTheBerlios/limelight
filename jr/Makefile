@@ -10,7 +10,7 @@ LIBDIR += -L/usr/X11R6/lib
 #FRAMEWORK = -framework GLUT
 #FRAMEWORK += -framework OpenGL
 
-COMPILERFLAGS = -Wall 
+COMPILERFLAGS = -Wall -ggdb
 CC = gcc
 CFLAGS = $(COMPILERFLAGS) $(INCDIR)
 #FOR MACS

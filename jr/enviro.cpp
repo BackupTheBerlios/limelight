@@ -17,6 +17,7 @@ else
 #include <iostream>
 #include <vector.h>
 #include <string>
+#include <map>
 #include "functRead.h" //what a bad name for this header file
 #include "dspWin.h" // a much better job of naming is going on here
 #include "functionFileCreator.h"
@@ -24,16 +25,23 @@ else
 
 /******************the great to do list: ****************
 
- *make limelight take in an environmental arg to open an img
- *make menus work
- *make drop down function changer work
- *make add function drop down work
- *make the open image "cancel" button work
+ *make limelight take in an environmental arg to open an img -- DONE ts (3/11)
+ *make menus work -- DONE ts (3/11)
+ *make drop down function changer work -- DONE ts (3/11)
+ *make add function stuff work
+ *make the open image "cancel" button work -- DONE ts (3/11)
+ *'save'/ 'save as' needs to reload B -- DONE ts (3/11)
+ *kill the glut menus
 
  *other improvements: 
+ *'close' menu item
  *add a printout from the stdout
+ *add a function remove feature...
  *rename func.fuk to configure something or other
  *rename enviro to limelight
+ *make the code readable
+ *enable tab for inputs and return for buttons (possible?)
+ *after adding a new function it should tell you to restart the program / if someone's feeling ambitious reload the functions
 
  */
 
@@ -41,9 +49,19 @@ using namespace std;
 
 //prototypes
 void createParamsWin(int num);
+void openFile(char* fileName);
 
 //globals
 
+struct ltstr{
+  bool operator()(const char* s1, const char* s2) const{
+    return strcmp(s1, s2) < 0;
+  }
+};
+
+
+
+map<const char *, int, ltstr> funcMap; // this is here for the drop down menu, cuz it only return char* (never again pui, never again)
 puMenuBar *mainMenu;
 puFileSelector *openDialogBox;
 int mainWin;
@@ -141,12 +159,21 @@ void keyb(unsigned char key, int x, int y){
 void openFileCB(puObject*){
   char* fileName;
   openDialogBox->getValue(&fileName);
-
-  //check to see if the cancel button was hit (this is ugly)
-  if(*(((string)fileName).last()) == '/')
-    return;
   
-  //check to see if we've already go an image, if so delete it
+  //check to see if the cancel button was hit (is this string conv neccesary)
+  string tmp = fileName;
+  if(tmp.size() == 0){
+    puDeleteObject(openDialogBox);
+    return;
+  }
+  
+  openFile(fileName); //we don't want to delete the filName, cuz the glut windows use it
+}
+
+//OPEN FILE
+void openFile(char* fileName){
+
+  //check to see if we've already got an image, if so delete it
   if(loadedImg != NULL){
     glutDestroyWindow(winA);
     glutDestroyWindow(winB);
@@ -173,7 +200,6 @@ void openFileCB(puObject*){
   cout << "open the file: " << fileName << endl;
   //we don't want to delete the filName, cuz the glut windows use it
 }
-
 //FILE MENU -- OPEN CALLBACK
 void openCB(puObject*){
   openDialogBox = new puFileSelector(0, 0, 252, 324, "", "Please select an image");
@@ -185,6 +211,7 @@ void openCB(puObject*){
 //PARAMS WINDOW -- OK CALLBACK
 void paramsWinOKCB(puObject*){
   //check to make sure there's an image loaded
+  cout << "is paramsWINCB called?\n";
   if(loadedImg == NULL) return;
 
   //create a list of the param values (in the right order) for the function call
@@ -222,10 +249,17 @@ void paramsWinOKCB(puObject*){
 
 //FUNCTION MENU -- CALLBACK
 void createParamsWin(int num){
+  //we need to free up the memory that was allocated for the last function that was displayed
+  vector<puObject*>::iterator start = paramsWinObjects.begin();
+  while(start!=paramsWinObjects.end()){
+    puDeleteObject(*start);
+    start++;
+  }
+  paramsWinObjects.clear();
 
-  //otherwise do normal thing
+  //ok, now for the new function
   curFunction = num;
-  
+  cout << "curFunction: " << num << endl;
   puFrame *box;
   box = new puFrame(0,0,252,280);
   box->setColour(PUCOL_BACKGROUND, 1,1,1, 1);
@@ -260,7 +294,7 @@ void createParamsWin(int num){
     it++;
   }
   puOneShot *ok = new puOneShot(x,y,"Run");
-  ok->setBorderThickness(2);    
+  ok->setBorderThickness(2);
   ok->setCallback(paramsWinOKCB);
 }
 
@@ -379,21 +413,32 @@ void exitCB(puObject*){
   exit(0);
 }
 
+//FILE MENU -- CLOSE CALLBACK
+void closeCB(puObject*){
+  if(loadedImg!=NULL){
+    glutDestroyWindow(winA);
+    glutDestroyWindow(winB); 
+    deleteDspWin(loadedImg);
+  }
+}
+
 //FILE MENU -- SAVE CALLBACK
 void saveCB(puObject*){
-  saveDspWin(loadedImg);
+  saveDspWin(loadedImg);//this saves the image
+  get_C_ready(loadedImg);//nice job josh, this is fuckin beautiful
+  get_D_ready(loadedImg);
 }
 
 //FILE MENU -- SAVE FILE AS CALLBACK
 void saveFileAsCB(puObject*){
   char *tmp = new char[200];
-  openDialogBox->getValue(tmp);
-  
-  puDeleteObject(openDialogBox);
-  
+  openDialogBox->getValue(tmp);    
   saveDspWin(loadedImg, tmp);
-  cout << "file saved as successfully\n";
   delete[] tmp;
+  //so here, we should actually reload the entire img, so as to rename the win names, etc.
+  //in the future this could be a place for improvement, cuz we don't actually need to call
+  //the entire open sequence...
+  openFile(loadedImg->path);
 }
 
 //stuff for making a pop-up
@@ -442,7 +487,11 @@ void saveAsCB(puObject*){
 
 //FUNC RELOAD CALLBACK
 void funcReload(puObject*){
-  
+  char *tmp = new char[80];
+  funcItems->getValue(tmp);
+  int num =  funcMap[tmp];
+  cout << "drop down: " << num << endl;
+  createParamsWin(num);
 }
 
 int main ( int argc, char **argv ){
@@ -464,35 +513,36 @@ int main ( int argc, char **argv ){
   //read in functions and make a glut style menu
   createMenu("funct.fuk", loadedFunctions); //load 'er up
   vector<function>::const_iterator it = loadedFunctions.begin();
+  char **functionList = new (char*)[loadedFunctions.size()];
   glutCreateMenu(createParamsWin); //in the future, if we want, this returns an int as an id
 
   int i=0;
   while(it != loadedFunctions.end()){
+    functionList[i] = (char*)it->name;
     glutAddMenuEntry((char*)it->name, i++);
     it++;
   }
 
   glutAttachMenu(GLUT_RIGHT_BUTTON); //end menu creation  
- 
-  //this will be good shortly
-  //read the functions in, add them to the list array
-  createMenu("funct.fuk", loadedFunctions); //load 'er up
+  
+  functionList[loadedFunctions.size()] = NULL; //again, this needs to be set to null for pui...
+  
+  for(int k=0;k<loadedFunctions.size()+1;k++)
+    cout << functionList[k++] << endl;
+  
   it = loadedFunctions.begin();
   i=0;
-  
-  char **functionList = new (char*)[loadedFunctions.size()+1]; 
-  while(it != loadedFunctions.end()){
-    functionList[i++] = (char*)it->name;
+  while(it!=loadedFunctions.end()){
+    //  cout << funcMap[(char*)it->name] << endl;
+    funcMap[(char*)it->name] = i++;
     it++;
   }
-  functionList[loadedFunctions.size()] = NULL;
-  
   //ok, here's the functions shit, so you can change them
   funcItems = new puComboBox( 15, 335, 215, 360, functionList, FALSE ) ;
   
   funcOk = new puOneShot(15, 300, "Change");
   funcOk->setBorderThickness(2);
-  //funcOk->setCallback(funcReload);
+  funcOk->setCallback(funcReload);
   
   //draw a line for the top of the screen
   puFrame *top =  new puFrame(0,375,250,401.5);
@@ -500,33 +550,24 @@ int main ( int argc, char **argv ){
   top->setStyle(PUSTYLE_BOXED);
   top->setBorderThickness(1);  
 
-  //help submenu -- ok more screwed up pui stuff, these menus won't work if you have an odd number of items...
-  /*  char **help_submenu = new (char*)[4];
-  for(int i=0;i<3;i++){
-    help_submenu[i] = new char[30];
-  }
-  help_submenu[2] = "Help";
-  help_submenu[1] = "---";
-  help_submenu[0] = "About";
-
-  int l =0;
-  while(l<3)
-    cout << help_submenu[l++] <<endl;
-  */
-
-  char *help_submenu[] = {"Help", "-----", "About", NULL};
-  puCallback help_submenu_cb [] = {helpCB, NULL, aboutCB, NULL};
+  //help -- here's the vedict on these arrays, they NEED to be one longer than the length, and the last entry needs to be a NULL
+  //otherwise we get weird seg faults, etc.
+  char *help_submenu[4] = {"Help", "-----", "About", NULL};
+  puCallback help_submenu_cb [4] = {helpCB, NULL, aboutCB, NULL};
 
   //file menu 
-  char *file_submenu[] = {"Exit", "-----", "Save as", "Save", "-----", "Add new function", "-----", "Open", NULL};
-  puCallback file_submenu_cb [] = { exitCB, NULL, saveAsCB, saveCB, NULL, addFuncCB, NULL, openCB, NULL};
+  char *file_submenu[10] = {"Exit", "-----", "Save as", "Save", "-----", "Add new function", "-----","Close", "Open", NULL};
+  puCallback file_submenu_cb [10] = { exitCB, NULL, saveAsCB, saveCB, NULL, addFuncCB, NULL, closeCB, openCB, NULL};
   
   //make the menu
   mainMenu = new puMenuBar ( -1 );
   mainMenu->add_submenu ( "File", file_submenu, file_submenu_cb);
   mainMenu->add_submenu( "Help", help_submenu, help_submenu_cb);
-  cout << "after help menu called get here?\n";  
   mainMenu->close ();
+
+  //the program was called with an image, so open it
+  if(argc > 1)
+    openFile(argv[1]);
  
   glutMainLoop () ;
 
