@@ -1,7 +1,7 @@
 
 #THESE PATHS MUST GO TO PLIB, whereever it may be ...
-LIBDIR = -L"/tmp/plib/lib"
-INCDIR = -I "/tmp/plib/include"
+LIBDIR = -L"/tmp/plib-1.8.4/lib"
+INCDIR = -I "/tmp/plib-1.8.4/include"
 
 #FOR LINUX
 LIBDIR += -L/usr/X11R6/lib
