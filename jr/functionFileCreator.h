@@ -43,7 +43,7 @@ void newFunct(string name, string path, list<parameter> &paramList) {
   
   /*Should I make vector of functions? */
 
-  ofstream outFile("./funct.fuk", ios::app);  //open file that will hold function list
+  ofstream outFile("/funct.fuk", ios::app);  //open file that will hold function list
 
   outFile << '\n' << '#' << name << ' ' << path;  //insert name and path
 
