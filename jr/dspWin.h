@@ -140,8 +140,10 @@ void get_D_ready (dspWin *target) {
   //for RGB, it is three bigger
   target->D = new unsigned char[width*height*3];
 
-  if (target->A->isRGB)
+  if (target->A->isRGB) {
     getDHelpPPM(target);
+    return;
+  }
   else
     getDHelpPGM(target);
   return;
@@ -151,17 +153,12 @@ void get_D_ready (dspWin *target) {
 void getCHelpPPM(dspWin *target) {
   int width = target->B->width();
   int height = target->B->height();
-  int count = 0;  //counter for loop
+  int count=0;  //counter for loop
   int loc = 0; //counter
   for (int i=height-1; i>=0; i--) {
-    for (int j=0; j<width; j++) {
-      loc = (i*width)+(j*3);
+    loc = i*width*3;
+    for (int j=0; j<width*3; j++)
       target->C[count++] = target->B->data[loc++];
-      //std::cout << target->B->data[loc];
-      target->C[count++] = target->B->data[loc++];
-      //std::cout << target->B->data[loc] << endl;
-      target->C[count++] = target->B->data[loc];
-    }
   }
   return;
 }
@@ -188,12 +185,9 @@ void getDHelpPPM(dspWin *target) {
   int count = 0;  //counter for loop
   int loc = 0; //counter
   for (int i=height-1; i>=0; i--) {
-    for (int j=0; j<width; j++) {
-      loc = (i*width)+(j*3);
+    loc = i*width*3;
+    for (int j=0; j<width*3; j++)
       target->D[count++] = target->A->data[loc++];
-      target->D[count++] = target->A->data[loc++];
-      target->D[count++] = target->A->data[loc];
-    }
   }
   return;
 }
