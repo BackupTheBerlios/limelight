@@ -7,7 +7,7 @@
 
 #include <unistd.h>
 #include <sys/wait.h>
-#include <iostream>
+//#include <iostream>
 
 /*
   This header holds the struct that will probably be put into a vector
@@ -33,6 +33,7 @@
   saving B, forking into call on saved B, reloading into B, and
   deleting the tmp location of B */
 
+vector<function> loadedFunctions; //this is read in from the funct.fuk file UGLINESS!!!
 
 //This is the struct for holding the parts of the image process
 //We need to de-templatize image class from image.h
@@ -43,8 +44,6 @@ struct dspWin {
   int winNum;
 };
 
-
-
 //prototypes
 void get_C_ready (dspWin *target);
 dspWin* initDspWin(char *filePath);
@@ -53,10 +52,9 @@ void deleteDspWin(dspWin *target);
 void callFunct(dspWin *target, int i, char **par);
 void load2B(dspWin *target, char *filePath);
 
-
-
 //initialize dspWin from disk
 dspWin* initDspWin(char *filePath) {
+  
   dspWin *tmp = new dspWin;
   
   /*this won't work unless we change Pedro's  pnmfile.h
@@ -67,11 +65,12 @@ dspWin* initDspWin(char *filePath) {
 
   //A is an image loaded from filePath
   tmp->A = loadPPM(filePath);
-
+  
   //tmp B is initially a copy of A
   tmp->B = tmp->A->copy();
 
   //prepares C in GL format
+  
   get_C_ready(tmp);
   return tmp;
 }
@@ -83,7 +82,7 @@ void get_C_ready (dspWin *target) {
   int count = 0;  //counter for loop
 
   //in case C is already initialized, delete it's value
-  delete[] target->C;
+  //delete[] target->C;
 
   //for RGB, it is three bigger
   target->C = new unsigned char[width*height*3];

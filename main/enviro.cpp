@@ -13,15 +13,15 @@ else
 #include <plib/pu.h>
 #include <iostream>
 #include <vector>
-
 #include "functRead.h" //what a bad name for this header file
 #include "dspWin.h" // a much better job of naming is going on here
+
 
 using namespace std;
 
 /*********************ok here we go: this will be a class but i dont feel like making a class right now *************/
 
-vector<function> loadedFunctions; //this is read in from the funct.fuk file
+//vector<function> loadedFunctions; //this is read in from the funct.fuk file UGLINESS!!!
 puMenuBar *mainMenu;
 puFileSelector *openDialogBox;
 int mainWin;
@@ -31,8 +31,10 @@ vector<dspWin*> imgsOnScr; //this is the images currently on the screen
 int curImg;
 int w2; // tsk, tsk, so messy, we'll take care of this soon
 int curFunction; //set this when a function menu item is called
+int fuck; //TEMP
 
 /********/
+
 
 
 void motionfn ( int x, int y )
@@ -60,6 +62,10 @@ void displayfn ()
     glCallList(curImg+1);
   }
 
+  if(fuck == 6){
+    glCallList(6);
+  }
+
   /*the above needs to be changed to lists of display lists... check it out below
   it's not really intuitive
   glListBase(0);
@@ -84,7 +90,7 @@ void openFileCB(puObject*){
   openDialogBox->getValue(&fileName);
   
   imgsOnScr.push_back(initDspWin(fileName)); //from dspWin.h
-
+  
   curImg = imgsOnScr.size() - 1;
 
   //display it??
@@ -159,13 +165,28 @@ void paramsWinOKCB(puObject*){
   }
 
   params[0] = loadedFunctions[curFunction].name;
-  params[paramsWinObjects.size()+1] = "./tmp.fuk"; //infile -- this will be trashed
-  params[paramsWinObjects.size()+2] ="./tmp2.fuk"; //outfile -- this will be trashed
+  params[paramsWinObjects.size()+1] = "/tmp/tmp.fuk"; //infile -- this will be trashed
+  params[paramsWinObjects.size()+2] ="/tmp/tmp2.fuk"; //outfile -- this will be trashed
   params[paramsWinObjects.size()+3] = '\0';
   
   callFunct(imgsOnScr[curImg], curFunction, params); //from dspWin.h
-  
   //callFunct runs the function on dspWin, deletes the tmp files, displays the result, DAMN
+
+  
+
+  glutSetWindow(imgsOnScr[curImg]->winNum);
+  fuck = 6;
+  glNewList(6, GL_COMPILE);
+  glRasterPos2i(-1,-1 ); //what is up with this? 0,0 supposed to be lower left corner...
+  glDrawPixels(imgsOnScr[curImg]->A->width(), 
+	       imgsOnScr[curImg]->A->height(),
+	       GL_RGB,
+	       GL_UNSIGNED_BYTE,
+	       imgsOnScr[curImg]->C);
+  glEndList();
+  
+  cout << glutGetWindow() << "should be : " << imgsOnScr[curImg]->winNum << endl; 
+  glutPostRedisplay();
 
   //make it ready for the next kid
   paramsWinObjects.clear();
