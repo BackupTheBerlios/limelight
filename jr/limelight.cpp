@@ -5,13 +5,16 @@
 #ifdef __APPLE__
 #include <glut/glut.h>
 #else
+
 #include <GL/glut.h>
 #endif
+
 #ifdef WIN32
 #include <windows.h>
 else
 #include <unistd.h>
 #endif
+
 #include <math.h>
 #include <plib/pu.h>
 #include <iostream>
@@ -27,15 +30,14 @@ else
  *make limelight take in an environmental arg to open an img -- DONE ts (3/11)
  *make menus work -- DONE ts (3/11)
  *make drop down function changer work -- DONE ts (3/11)
+ *make add function stuff work
  *make the open image "cancel" button work -- DONE ts (3/11)
  *'save'/ 'save as' needs to reload B -- DONE ts (3/11)
  *kill the glut menus -- DONE ts (3/11)
  *hmmmm... i think that we can totally get rid of c and d... (glPixelZoom(1.0,-1.0)), haha. except giving it a neg num doesnt work (WTF??)
  *check out disabling gl states we dont use -- DONE ts (3/12)
- *gl states are different for macs, find out which ones
 
  *wish list:
- *make add function stuff work
  *'close' menu item -- DONE ts (3/11)
  *add a printout from the stdout (this one is a little hard, we need to make it pipe the exec) -- dup2 to a text file so people can look at it later
  *add a function remove feature...
@@ -113,9 +115,20 @@ double offSetX=0.0;
 double offSetY=0.0;
 int zoom=0; //whether or not we are zooming
 double zoomAmount=1.0;
+double zoomOffSetY = 0.0;
 
 //pui globals
-//puOneShot *ok;
+puFileSelector *addFuncPath;
+puInput *addFuncName, *addFuncParamsNum;
+vector<puObject*> addFuncParams; //the entires will be name, then type, ok cool 
+char *addFuncPathValue = new char[80]; 
+char *addFuncNameValue = new char[80]; 
+int *addFuncParamNumValue = new int;
+void addFuncCB(puObject*);
+void addFuncPathCB(puObject*);
+void addFuncNameCB(puObject*);
+void addFuncFinalCB(puObject*);
+puOneShot *ok;
 puDialogBox *popupBox = NULL ;
 puComboBox *funcItems;
 puOneShot *funcOk;
@@ -128,6 +141,9 @@ struct parameter {
   string type;
 };
 #endif
+
+
+list<parameter> addFuncParamsValues; //the entires will be name, then type, ok not cool, pui is lame
 
 void motionfn(int x, int y){
   puMouse(x, y);
@@ -143,9 +159,7 @@ void motionfnWinA(int x, int y ){
  //for the zoom
   /*ZOOM RESETS TO 0 SOMETIMES ON THE SECOND GO AROUND*/
   if(zoom==1){
-    //FIX NEEDED THIS RESETS TO ONE (duh) we gotta rework the logic
-    double zoomOffSetY = (double)(posHeight-y) / 10; //so for every 10 pixels we go in a tenth of a zoom level
-    
+    zoomOffSetY = (double)(posHeight-y) / 10; //so for every 10 pixels we go in a tenth of a zoom level
     zoomAmount = zoomOffSetY + 1.0;
  
     if(zoomAmount < 1.0) zoomAmount = 1.0;
@@ -158,40 +172,34 @@ void motionfnWinA(int x, int y ){
   }
   
   else if (zoomAmount == 1.0) return; //we cannot pan if zoom is 1
- 
-  //for the pan
+  
   else{
     /*REMEMBER TO TEST PAN ON LENA AND STOP (AND WITH LITTLE ZOOM AMOUNTS AND BIG ONES)*/
-    cout << endl;
-    double tmp = zoomAmount/10;
-
-    newOffX=(posWidth-x)/zoomAmount; //this is divided by zoomAmount so that we 'slow down' the panning
-    newOffY=(posHeight-y)/zoomAmount;
-    cout << "newoffy: " << newOffY << endl;
+    //for the pan 
+    newOffX=(posWidth-x)/zoomAmount; //5 is a 'slowing down' factor
+    newOffY=(posHeight-y)/zoomAmount;//add the slow down factor in later when this works
+    
     offSetX += newOffX;
     offSetY += newOffY;
     
     if(offSetX<0)offSetX=0;
     if(offSetY<0)offSetY=0;
     
-    tmp = 1-tmp;
-    cout << "tmp: " <<tmp<<endl;
-    if(offSetX > ((double)loadedImg->A->width() * tmp)) offSetX = ((double)loadedImg->A->width() *tmp);
-    if(offSetY > ((double)loadedImg->A->height()* tmp)) offSetY = ((double)loadedImg->A->height()*tmp);
-   
+    if(offSetX > ((double)loadedImg->A->width() / zoomAmount)) offSetX = ((double)loadedImg->A->width() / zoomAmount);
+    if(offSetY > ((double)loadedImg->A->height() / zoomAmount)) offSetY = ((double)loadedImg->A->height() / zoomAmount);
     cout << "zoomAmout: " << zoomAmount << endl;
-    cout << "offsetY: " << offSetY << " " << "offSetX: " << offSetX << endl;
-    cout << "max height: " << (double)loadedImg->A->height()*tmp << " width: " << (double)loadedImg->A->width()*tmp << endl;
- 
-    cout << "total height: " << loadedImg->A->height() << endl;
+    cout << "offsetY: " << offSetY << " " << "offSetX: " << offSetY << endl;
+    cout << "height: " << (double)loadedImg->A->height()/zoomAmount << " width: " << (double)loadedImg->A->width()/zoomAmount << endl;
     glPixelStoref(GL_UNPACK_SKIP_ROWS, offSetY);
     glPixelStoref(GL_UNPACK_SKIP_PIXELS, offSetX);
     glutPostRedisplay();
     glutSwapBuffers();
   }
+ 
 }
 
 void mousefnWinA(int button, int updown, int x, int y){
+  
   //for zoom
   if(glutGetModifiers() == GLUT_ACTIVE_SHIFT){
     glutSetCursor(GLUT_CURSOR_DESTROY);
@@ -231,6 +239,7 @@ void dispfnWinA(){
   if(loadedImg!=NULL){
     glClearColor( 0.9, 1.0, 0.9, 1.0 );
     glClear(GL_COLOR_BUFFER_BIT);
+    glPixelZoom(zoomAmount,zoomAmount);
     glPixelStoref(GL_UNPACK_ALIGNMENT, 1);
     glRasterPos2i(-1,-1 );
     glDrawPixels(loadedImg->A->width(),
@@ -450,6 +459,107 @@ void createParamsWin(int num){
   ok->setBorderThickness(2);
   ok->setCallback(paramsWinOKCB);
 }
+
+//FILE MENU -- add function callback
+//LET ME JUST SAY THAT I AM NOT RESPONSIBLE FOR THIS SHIT
+//(it was written between 3 and something in the morning, and it's all crap)
+void addFuncCB(puObject*){
+  //grab the path to the binary
+  addFuncPath = new puFileSelector(0, 0, 252, 324, "", "Please select a binary");
+  addFuncPath->setInitialValue("");
+  addFuncPath->setChildBorderThickness(PUCLASS_INPUT, 1);
+  addFuncPath->setCallback(addFuncPathCB);  
+}
+
+void addFuncPathCB(puObject*){
+ 
+  addFuncPath->getValue(addFuncPathValue); //store value of the filepath
+  puDeleteObject(addFuncPath);
+ 
+  //TO DO: check for cancel button (cuz it doesn't have its own callback)
+  //TO DO: these labels don't show up, i have NO idea why...
+  
+  //this guy needs to be deleted (aka globally declared)
+  puText *title = new puText(50, 200);
+  title->setLabelPlace(PUPLACE_CENTERED_LEFT);
+  title->setLabel("Add new function (2 of 3)");
+
+  addFuncName = new puInput(50, 150, 100, 170);
+  addFuncName->setLabel("Name: ");
+  addFuncName->setBorderThickness(1);
+  addFuncName->setLabelPlace(PUPLACE_CENTERED_LEFT);
+  
+  addFuncParamsNum = new puInput(50, 100, 100, 120);
+  addFuncParamsNum->setBorderThickness(1);
+  addFuncParamsNum->setLabelPlace(PUPLACE_CENTERED_LEFT);
+  addFuncParamsNum->setLabel("# of params: ");
+  
+  ok = new puOneShot(50,50,"Ok");
+  ok->setBorderThickness(2);    
+  ok->setCallback(addFuncNameCB);
+}
+
+void addFuncNameCB(puObject*){
+  addFuncName->getValue(addFuncNameValue); //get this value
+  cout << "name: " << addFuncNameValue << endl;
+  addFuncParamsNum->getValue(addFuncParamNumValue);
+  puDeleteObject(addFuncName);
+  puDeleteObject(addFuncParamsNum);
+  puDeleteObject(ok);
+  
+  //loop over the params vector, creating fun widgets as we go
+  int y=280; 
+  int x=100;
+  int i =0; 
+  while(i != *addFuncParamNumValue){
+    puInput *tmp = new puInput ( x, y, x+50,y+20 ) ;
+    tmp->setBorderThickness(1);
+    tmp->setLabelPlace(PUPLACE_CENTERED_LEFT);
+    tmp->setLabel("Name:");
+    addFuncParams.push_back(tmp); //push these onto the vector so we can grab their values later
+    y-=30;
+    //add type boxes
+    tmp = new puInput ( x, y, x+50,y+20 ) ;
+    tmp->setBorderThickness(1);
+    tmp->setLabelPlace(PUPLACE_CENTERED_LEFT);
+    tmp->setLabel("Type:");
+    addFuncParams.push_back(tmp); //push these onto the vector so we can grab their values later
+    y-=30;
+    i++;
+  }       
+  ok = new puOneShot(x,y,"Run");
+  ok->setBorderThickness(2);    
+  ok->setCallback(addFuncFinalCB);
+}
+
+void addFuncFinalCB(puObject*){
+  unsigned int j = 0;
+  //loop over the param values from the window
+  while(j < addFuncParams.size()){
+    parameter tmp;
+    char *tmp1 = new char[80];
+    addFuncParams[j]->getValue(tmp1);
+    puDeleteObject(addFuncParams[j++]);
+    cout << "param name: " << tmp1 << endl;
+    tmp.name = tmp1;
+    tmp1 = new char[80];
+    addFuncParams[j]->getValue(tmp1);
+    puDeleteObject(addFuncParams[j++]);
+    cout << "param type: " << tmp1 << endl;
+    tmp.type = tmp1;
+    addFuncParamsValues.push_back(tmp);
+  }
+  puDeleteObject(ok);
+  //ok call this fucker
+  //these all need to be changed to string
+  string name, path;
+  name = addFuncNameValue;//UGLY
+  path = addFuncPathValue;//UGLY
+  newFunct(name, path, addFuncParamsValues);
+  cout << "function added\n";
+}
+
+//END SECTION OF CODE NO ONE IS RESPONSIBLE FOR
 
 //FILE MENU -- exit function callback
 void exitCB(puObject*){
