@@ -76,7 +76,13 @@ dspWin* initDspWin(char *filePath) {
 
   //open file
   ifstream input(filePath, ios::in);
-  
+
+  //make sure we got a good file
+  if(!input.is_open()){
+    cout << "ERROR OPENING FILE\n";
+    return 0;
+  }
+
   //check second character (P_) - if it's 6, then this is a ppm, if 5, then pgm, 4 - pbm
   input.seekg(1, ios::beg);
   char c = input.peek();
@@ -310,18 +316,24 @@ void callFunct(dspWin *target, int i, char **par){
   saveTMP(target);
     
   //forking
-  int pid;
+  int pid, childStatus;
   int died, status; //status is set by the call to exec
   
   switch(pid=fork()){
   case -1: //error
     exit(-1);
   case 0: //0 means a child process
-    execv(loadedFunctions[i].path, par);
+    childStatus = execv(loadedFunctions[i].path, par);
   default:
     died = wait(&status);
   }
   //end fork
+  
+  //error with the executable
+  if(childStatus == -1){
+    cout << "ERROR WITH BINARY FILE\n(you probably just wrote the wrong path name in your functions definitions file)\n";
+    return ;
+  }
 
   //load file to B
   load2B(target, "/tmp/tmp2.lime");

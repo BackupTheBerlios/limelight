@@ -28,16 +28,16 @@ else
 
 /******************the great to do list: ****************
 
- *hmmmm... i think that we can totally get rid of c and d... (glPixelZoom(1.0,-1.0)), haha. except giving it a neg num doesnt work (WTF??)
  *check out disabling gl states we dont use -- for macs and linux -- DONE
  *remeber to not compile with -g in the final makefile
  *kill save -- DONE
  *on linux kill the windows thing (when someone hits a child window's X don't make it close), also make it so you cant resize the image windows
  *error checking for this entire program, specifically if the executable isn't there for a function call, if an image didn't load correctly,
-  or wasn't there, etc..
+  or wasn't there, etc.. -- DONE
  *dspWin.h doesn't need save or save as distinction anymore
 
  *wish list:
+ *hmmmm... i think that we can totally get rid of c and d... (glPixelZoom(1.0,-1.0)), haha. except giving it a neg num doesnt work (WTF??)
  *add a printout from the stdout (this one is a little hard, we need to make it pipe the exec) -- dup2 to a text file so people can look at it later
  *enable tab for inputs and return for buttons (possible?)
  *make pan amount not so slow when zoomAmount < 5
@@ -600,7 +600,7 @@ void callFuncCB(puObject*){
   glutSetCursor(GLUT_CURSOR_WAIT); //make a cool wait cursor for while the function is running
   callFunct(loadedImg, curFunction, params); //from dspWin.h
   glutSetCursor(GLUT_CURSOR_INHERIT);
-    
+ 
   //now redisplay c in winb
   glutSetWindow(winB);
   glutPostRedisplay();
@@ -721,7 +721,8 @@ void openFile(char* fileName){
   }
   
   loadedImg = initDspWin(fileName); //from dspWin.h
-  
+  if(loadedImg == 0) return;
+
   //reset the pan and zoom variable BEFORE loading images onto screens
   //for winA
   mouseOnA = 0;
